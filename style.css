@@ -1,0 +1,258 @@
+/* خريطة القسائم الصناعية في الكويت - منطق التطبيق */
+(function () {
+  "use strict";
+
+  // ---------- حالة التطبيق ----------
+  const state = {
+    search: "",
+    area: "",
+    sortKey: null,
+    sortDir: 1, // 1 تصاعدي، -1 تنازلي
+  };
+
+  const fmtNum = (n) =>
+    typeof n === "number" ? n.toLocaleString("en-US", { maximumFractionDigits: 2 }) : (n || "—");
+  const esc = (s) =>
+    String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])
+    );
+
+  // ---------- الإحصائيات ----------
+  function renderStats() {
+    const totalSize = PLOTS.reduce((s, p) => s + (typeof p.size === "number" ? p.size : 0), 0);
+    const cards = [
+      { num: PLOTS.length.toLocaleString("en-US"), lbl: "إجمالي القسائم" },
+      { num: AREAS.length, lbl: "المناطق الصناعية" },
+      { num: fmtNum(Math.round(totalSize)), lbl: "إجمالي المساحة (م²)" },
+    ];
+    document.getElementById("stats").innerHTML = cards
+      .map((c) => `<div class="stat-card"><div class="num">${c.num}</div><div class="lbl">${c.lbl}</div></div>`)
+      .join("");
+  }
+
+  // ---------- الخريطة ----------
+  let map, markers = {};
+  function initMap() {
+    map = L.map("map", { scrollWheelZoom: false }).setView([29.25, 47.95], 9);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: "© OpenStreetMap",
+    }).addTo(map);
+
+    const maxCount = Math.max(...AREAS.map((a) => a.count));
+    AREAS.forEach((a) => {
+      const radius = 10 + (a.count / maxCount) * 22;
+      const m = L.circleMarker([a.lat, a.lng], {
+        radius,
+        color: "#16324f",
+        weight: 2,
+        fillColor: "#2bb673",
+        fillOpacity: 0.75,
+      }).addTo(map);
+
+      m.bindTooltip(`${a.name} (${a.count})`, { direction: "top" });
+      m.bindPopup(
+        `<div class="map-popup">
+           <b>${esc(a.name)}</b><br/>
+           عدد القسائم: ${a.count}<br/>
+           إجمالي المساحة: ${fmtNum(a.totalSize)} م²<br/>
+           <button data-area="${esc(a.name)}">عرض القسائم في الجدول ↓</button>
+         </div>`
+      );
+      m.on("popupopen", (e) => {
+        const btn = e.popup.getElement().querySelector("button[data-area]");
+        if (btn) btn.addEventListener("click", () => {
+          selectArea(a.name);
+          document.querySelector(".table-section").scrollIntoView({ behavior: "smooth" });
+        });
+      });
+      m.on("click", () => selectArea(a.name));
+      markers[a.name] = m;
+    });
+  }
+
+  function selectArea(name) {
+    state.area = name;
+    document.getElementById("areaFilter").value = name;
+    const a = AREAS.find((x) => x.name === name);
+    if (a && map) map.flyTo([a.lat, a.lng], 12, { duration: 0.6 });
+    render();
+  }
+
+  // ---------- الفلترة + الترتيب ----------
+  function matches(p) {
+    if (state.area && p.area !== state.area) return false;
+    if (!state.search) return true;
+    const q = state.search.toLowerCase();
+    const hay = [
+      p.client, p.owner, p.area, p.block, p.plot, p.size, p.contractEnd,
+      ...p.history.flatMap((h) => [h.prevOwner, h.civil, h.date]),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return hay.includes(q);
+  }
+
+  function sortRows(rows) {
+    if (!state.sortKey) return rows;
+    const k = state.sortKey;
+    return rows.slice().sort((a, b) => {
+      let va = k === "histCount" ? a.history.length : a[k];
+      let vb = k === "histCount" ? b.history.length : b[k];
+      if (k === "size" || k === "histCount") {
+        va = typeof va === "number" ? va : -Infinity;
+        vb = typeof vb === "number" ? vb : -Infinity;
+        return (va - vb) * state.sortDir;
+      }
+      // محاولة الترتيب الرقمي لرقم العميل/القسيمة
+      const na = parseFloat(va), nb = parseFloat(vb);
+      if (!isNaN(na) && !isNaN(nb)) return (na - nb) * state.sortDir;
+      return String(va || "").localeCompare(String(vb || ""), "ar") * state.sortDir;
+    });
+  }
+
+  // ---------- عرض الجدول ----------
+  function render() {
+    const rows = sortRows(PLOTS.filter(matches));
+    const body = document.getElementById("plotsBody");
+    body.innerHTML = rows
+      .map((p, i) => {
+        const hc = p.history.length;
+        const badge = hc
+          ? `<span class="badge">${hc}</span>`
+          : `<span class="badge zero">0</span>`;
+        return `
+        <tr class="plot-row" data-i="${i}">
+          <td>${esc(p.client)}</td>
+          <td>${esc(p.area)}</td>
+          <td>${esc(p.block)}</td>
+          <td>${esc(p.plot)}</td>
+          <td>${fmtNum(p.size)}</td>
+          <td class="owner-cell">${esc(p.owner)}</td>
+          <td>${esc(p.contractEnd)}</td>
+          <td>${badge}</td>
+        </tr>`;
+      })
+      .join("");
+
+    // ربط النقر لإظهار سجل المالكين السابقين
+    body.querySelectorAll("tr.plot-row").forEach((tr) => {
+      tr.addEventListener("click", () => toggleHistory(tr, rows[+tr.dataset.i]));
+    });
+
+    document.getElementById("resultCount").textContent =
+      `عدد النتائج: ${rows.length.toLocaleString("en-US")}`;
+    const empty = document.getElementById("emptyState");
+    empty.hidden = rows.length !== 0;
+
+    // إبراز علامة المنطقة المختارة
+    Object.entries(markers).forEach(([name, m]) => {
+      m.setStyle({ fillColor: state.area && name === state.area ? "#3a9ad9" : "#2bb673" });
+    });
+  }
+
+  function toggleHistory(tr, p) {
+    const next = tr.nextElementSibling;
+    if (next && next.classList.contains("history-row")) {
+      next.remove();
+      tr.classList.remove("active");
+      return;
+    }
+    // إزالة أي صف سجل مفتوح آخر
+    document.querySelectorAll(".history-row").forEach((e) => e.remove());
+    document.querySelectorAll("tr.plot-row.active").forEach((e) => e.classList.remove("active"));
+
+    tr.classList.add("active");
+    const hist = p.history.length
+      ? `<table class="history-table">
+           <thead><tr><th>التاريخ</th><th>الرقم المدني</th><th>المالك السابق</th></tr></thead>
+           <tbody>${p.history
+             .map((h) => `<tr><td>${esc(h.date)}</td><td>${esc(h.civil)}</td><td>${esc(h.prevOwner)}</td></tr>`)
+             .join("")}</tbody>
+         </table>`
+      : `<p style="color:var(--muted);margin:0">لا يوجد سجل مالكين سابقين.</p>`;
+
+    const row = document.createElement("tr");
+    row.className = "history-row";
+    row.innerHTML = `<td colspan="8"><div class="history-inner">
+        <h4>سجل المالكين السابقين — قسيمة ${esc(p.plot)} / قطعة ${esc(p.block)} (${esc(p.area)})</h4>
+        ${hist}
+      </div></td>`;
+    tr.after(row);
+  }
+
+  // ---------- عناصر التحكم ----------
+  function initControls() {
+    const areaSel = document.getElementById("areaFilter");
+    AREAS.forEach((a) => {
+      const o = document.createElement("option");
+      o.value = a.name;
+      o.textContent = `${a.name} (${a.count})`;
+      areaSel.appendChild(o);
+    });
+
+    let t;
+    document.getElementById("search").addEventListener("input", (e) => {
+      clearTimeout(t);
+      t = setTimeout(() => { state.search = e.target.value.trim(); render(); }, 180);
+    });
+
+    areaSel.addEventListener("change", (e) => {
+      state.area = e.target.value;
+      if (state.area && markers[state.area]) {
+        const a = AREAS.find((x) => x.name === state.area);
+        map.flyTo([a.lat, a.lng], 12, { duration: 0.6 });
+      }
+      render();
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      state.search = "";
+      state.area = "";
+      document.getElementById("search").value = "";
+      areaSel.value = "";
+      map.flyTo([29.25, 47.95], 9, { duration: 0.6 });
+      render();
+    });
+
+    // الترتيب عند النقر على رأس العمود
+    document.querySelectorAll("thead th").forEach((th) => {
+      th.addEventListener("click", () => {
+        const key = th.dataset.key;
+        if (state.sortKey === key) state.sortDir *= -1;
+        else { state.sortKey = key; state.sortDir = 1; }
+        document.querySelectorAll("thead th").forEach((x) =>
+          x.classList.remove("sorted-asc", "sorted-desc"));
+        th.classList.add(state.sortDir === 1 ? "sorted-asc" : "sorted-desc");
+        render();
+      });
+    });
+  }
+
+  // ---------- بدء التشغيل ----------
+  document.addEventListener("DOMContentLoaded", () => {
+    renderStats();
+    // الخريطة اختيارية: إن فشل تحميل المكتبة أو الخادم لا يتعطّل الجدول
+    try {
+      if (typeof L !== "undefined") initMap();
+      else showMapFallback("تعذّر تحميل مكتبة الخريطة.");
+    } catch (e) {
+      console.error("Map init failed:", e);
+      showMapFallback("تعذّر عرض الخريطة في هذه البيئة.");
+    }
+    initControls();
+    render();
+  });
+
+  function showMapFallback(msg) {
+    const el = document.getElementById("map");
+    if (el) {
+      el.style.display = "flex";
+      el.style.alignItems = "center";
+      el.style.justifyContent = "center";
+      el.style.color = "var(--muted)";
+      el.textContent = msg + " يمكنك استخدام البحث والجدول بالأسفل.";
+    }
+  }
+})();
