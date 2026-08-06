@@ -82,7 +82,7 @@
     if (!state.search) return true;
     const q = state.search.toLowerCase();
     const hay = [
-      l.license, l.client, l.name, l.trade, l.area, l.activity, l.status,
+      l.license, l.client, l.name, l.trade, l.area, l.activity, l.status, l.delivery,
       ...l.plots.flatMap((p) => [p.block, p.plot]),
       ...l.transfers.flatMap((t) => [t.from, t.to, t.reqNo, t.date]),
     ].filter(Boolean).join(" ").toLowerCase();
@@ -123,6 +123,7 @@
         <td class="name-cell">${esc(l.trade)}</td>
         <td><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></td>
         <td>${esc(l.end)}</td>
+        <td>${esc(l.delivery)}</td>
         <td>${badge}</td>
       </tr>`;
     }).join("");
@@ -146,7 +147,8 @@
     tr.classList.add("active");
 
     const plots = l.plots.map((p) =>
-      `<li>قطعة ${esc(p.block)} — قسيمة ${esc(p.plot)} — ${fmtNum(p.size)} م²</li>`).join("");
+      `<li>قطعة ${esc(p.block)} — قسيمة ${esc(p.plot)} — ${fmtNum(p.size)} م²` +
+      (p.delivery ? ` — تاريخ التسليم: ${esc(p.delivery)}` : "") + `</li>`).join("");
 
     const transfers = l.transfers.length
       ? `<table class="hist-table">
@@ -158,13 +160,14 @@
 
     const row = document.createElement("tr");
     row.className = "detail-row";
-    row.innerHTML = `<td colspan="10"><div class="detail-inner">
+    row.innerHTML = `<td colspan="11"><div class="detail-inner">
         <div class="detail-grid">
           <div><div class="k">الاسم الحالي للترخيص</div><div class="v">${esc(l.name)}</div></div>
           <div><div class="k">الاسم التجاري</div><div class="v">${esc(l.trade)}</div></div>
           <div><div class="k">حالة الترخيص</div><div class="v"><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></div></div>
           <div><div class="k">تاريخ البداية</div><div class="v">${esc(l.start)}</div></div>
           <div><div class="k">تاريخ النهاية</div><div class="v">${esc(l.end)}</div></div>
+          <div><div class="k">تاريخ التسليم</div><div class="v">${esc(l.delivery)}</div></div>
           <div class="activity"><div class="k">النشاط</div><div class="v">${esc(l.activity)}</div></div>
         </div>
         <h4>القسائم (${l.plots.length})</h4>
