@@ -214,6 +214,10 @@
       if (map) map.flyTo([29.05, 48.14], 11, { duration: 0.6 });
       render();
     });
+    const printBtn = document.getElementById("printBtn");
+    if (printBtn) printBtn.addEventListener("click", () => { buildPrintHeader(); window.print(); });
+    window.addEventListener("beforeprint", buildPrintHeader);
+
     document.querySelectorAll("thead th").forEach((th) => {
       th.addEventListener("click", () => {
         const key = th.dataset.key;
@@ -225,6 +229,25 @@
         render();
       });
     });
+  }
+
+  function buildPrintHeader() {
+    const el = document.getElementById("printHeader");
+    if (!el) return;
+    const shown = document.querySelectorAll("#licBody tr.main-row").length;
+    const today = new Date().toLocaleDateString("ar-KW-u-nu-latn");
+    const filters = [];
+    if (state.area) filters.push(`المنطقة: ${state.area}`);
+    if (state.status) filters.push(`الحالة: ${state.status}`);
+    if (state.search) filters.push(`بحث: ${state.search}`);
+    const fTxt = filters.length ? filters.join(" — ") : "بدون تصفية (كل التراخيص)";
+    el.innerHTML =
+      `<h2>تقرير التراخيص الصناعية — الشعيبة</h2>
+       <div class="meta">
+         <span>تاريخ التصدير: ${esc(today)}</span>
+         <span>عدد التراخيص: ${shown}</span>
+         <span>${esc(fTxt)}</span>
+       </div>`;
   }
 
   function showMapFallback(msg) {

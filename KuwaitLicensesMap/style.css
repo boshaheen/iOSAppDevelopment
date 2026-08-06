@@ -56,6 +56,12 @@ main { max-width: 1280px; margin: 0 auto; padding: 18px 16px 40px; }
   border-radius: 10px; padding: 11px 16px; cursor: pointer; font-family: inherit; font-size: .9rem;
 }
 .clear-btn:hover { border-color: var(--danger); color: var(--danger); }
+.print-btn {
+  background: var(--accent); color: #fff; border: 1px solid var(--accent);
+  border-radius: 10px; padding: 11px 16px; cursor: pointer; font-family: inherit; font-size: .9rem;
+}
+.print-btn:hover { filter: brightness(1.08); }
+.print-only { display: none; }
 .result-count { color: var(--muted); font-size: .9rem; margin-inline-start: auto; }
 
 .table-section {
@@ -151,4 +157,37 @@ tbody tr.main-row.active { background: #223347; }
   #map { height: 340px; }
   .site-header h1 { font-size: 1.3rem; }
   .result-count { margin-inline-start: 0; width: 100%; }
+}
+
+/* ===== الطباعة / تصدير PDF ===== */
+@media print {
+  @page { size: A4 landscape; margin: 12mm 10mm; }
+  html, body { background: #fff !important; color: #000 !important; }
+  .site-header, .stats, .map-section, .controls, .plans-section,
+  .site-footer, #lightbox { display: none !important; }
+  main { max-width: none; margin: 0; padding: 0; }
+
+  .print-only { display: block; margin-bottom: 10px; }
+  #printHeader h2 { margin: 0 0 4px; font-size: 16pt; color: #000; }
+  #printHeader .meta { font-size: 9pt; color: #333; }
+  #printHeader .meta span { margin-inline-start: 14px; }
+
+  .table-section { box-shadow: none; border: none; border-radius: 0; background: #fff; }
+  .table-wrap { max-height: none; overflow: visible; }
+  table { font-size: 8pt; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; }
+  thead th {
+    position: static; background: #e9eef3 !important; color: #000 !important;
+    border: 1px solid #999; padding: 5px 6px; white-space: normal;
+  }
+  thead th::after { content: "" !important; }
+  tbody td { border: 1px solid #bbb; padding: 4px 6px; color: #000 !important; white-space: normal; }
+  tbody tr.main-row.active { background: #fff !important; }
+  .name-cell { min-width: 0; }
+  .badge { background: #eee !important; color: #000 !important; border: 1px solid #999; }
+  .status { border: 1px solid #666 !important; color: #000 !important; background: #f2f2f2 !important; }
+  .detail-row > td { background: #fafafa !important; }
+  .detail-inner h4 { color: #000 !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

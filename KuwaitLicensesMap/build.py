@@ -44,8 +44,10 @@ def main():
       <div class="control"><select id="areaFilter"><option value="">كل المناطق</option></select></div>
       <div class="control"><select id="statusFilter"><option value="">كل الحالات</option></select></div>
       <div class="control"><button id="clearBtn" class="clear-btn" type="button">مسح ✕</button></div>
+      <div class="control"><button id="printBtn" class="print-btn" type="button">🖨️ تصدير PDF</button></div>
       <div class="result-count" id="resultCount"></div>
     </section>
+    <div id="printHeader" class="print-only"></div>
     <section class="table-section">
       <div class="table-wrap">
         <table id="licTable">
