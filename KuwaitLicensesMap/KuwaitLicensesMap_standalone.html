@@ -888,15 +888,19 @@ const LICENSES = [{"license": "10105", "area": "الشعيبة الصناعية(
   let map, markers = {};
   function initMap() {
     map = L.map("map", { scrollWheelZoom: false }).setView([29.05, 48.14], 11);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18, attribution: "© OpenStreetMap",
+    // خلفية صور الأقمار الصناعية من Esri + طبقة أسماء الأماكن فوقها
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 19, attribution: "Imagery © Esri, Maxar, Earthstar Geographics",
+    }).addTo(map);
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 19, opacity: 0.9, attribution: "",
     }).addTo(map);
 
     const maxCount = Math.max(...AREAS.map((a) => a.count), 1);
     AREAS.forEach((a) => {
       const radius = 12 + (a.count / maxCount) * 22;
       const m = L.circleMarker([a.lat, a.lng], {
-        radius, color: "#16324f", weight: 2, fillColor: "#2bb673", fillOpacity: 0.75,
+        radius, color: "#ffffff", weight: 2.5, fillColor: "#2bb673", fillOpacity: 0.85,
       }).addTo(map);
       m.bindTooltip(`${a.name} (${a.count})`, { direction: "top" });
       m.bindPopup(
