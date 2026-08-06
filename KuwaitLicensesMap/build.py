@@ -13,6 +13,7 @@ def main():
     leaflet_js = read("vendor/leaflet.js")
     style_css = read("style.css")
     data_js = read("data.js")
+    plans_js = read("plans.js")
     app_js = read("app.js")
 
     html = f"""<!DOCTYPE html>
@@ -66,7 +67,25 @@ def main():
       </div>
       <div id="emptyState" class="empty-state" hidden>لا توجد نتائج مطابقة لبحثك.</div>
     </section>
+    <section class="plans-section">
+      <h2 class="plans-title">🗺️ مخططات المناطق الصناعية</h2>
+      <p class="plans-hint">اضغط على أي مخطط لعرضه بحجم كامل مع إمكانية التكبير والتحريك.</p>
+      <div class="plans-grid" id="plansGrid"></div>
+    </section>
   </main>
+  <div id="lightbox" class="lightbox" hidden>
+    <div class="lb-bar">
+      <span class="lb-title" id="lbTitle"></span>
+      <span class="lb-actions">
+        <button type="button" id="lbZoomOut" title="تصغير">−</button>
+        <button type="button" id="lbZoomIn" title="تكبير">+</button>
+        <button type="button" id="lbReset" title="إعادة الضبط">⟲</button>
+        <a id="lbDownload" download="مخطط.jpg" title="تحميل">⬇</a>
+        <button type="button" id="lbClose" title="إغلاق">✕</button>
+      </span>
+    </div>
+    <div class="lb-stage" id="lbStage"><img id="lbImg" alt="مخطط" draggable="false" /></div>
+  </div>
   <footer class="site-footer">
     <p>البيانات مستخرجة من تقرير التراخيص الصناعية (كل ترخيص يظهر مرة واحدة، وتُعرض حركات التنازل عند فتح الصف). (خلفية الخريطة تحتاج اتصال إنترنت؛ الجدول والبحث يعملان بدونه.)</p>
   </footer>
@@ -75,6 +94,9 @@ def main():
   </script>
   <script>
 {data_js}
+  </script>
+  <script>
+{plans_js}
   </script>
   <script>
 {app_js}

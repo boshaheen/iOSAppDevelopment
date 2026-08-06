@@ -232,8 +232,91 @@
     }
   }
 
+  // ---------- المخططات + العارض المكبّر ----------
+  function renderPlans() {
+    const grid = document.getElementById("plansGrid");
+    if (!grid || typeof PLANS === "undefined") return;
+    grid.innerHTML = PLANS.map((p, i) => `
+      <div class="plan-card" data-i="${i}">
+        <img class="thumb" src="${p.thumb}" alt="${esc(p.title)}" loading="lazy" />
+        <div class="meta">
+          <div class="t">${esc(p.title)}</div>
+          <div class="c">${esc(p.caption || "")}</div>
+          <div class="open">عرض المخطط ⤢</div>
+        </div>
+      </div>`).join("");
+    grid.querySelectorAll(".plan-card").forEach((c) =>
+      c.addEventListener("click", () => openLightbox(PLANS[+c.dataset.i])));
+  }
+
+  const lb = { scale: 1, x: 0, y: 0, dragging: false, sx: 0, sy: 0, ox: 0, oy: 0 };
+  function lbApply() {
+    const img = document.getElementById("lbImg");
+    img.style.transform = `translate(${lb.x}px, ${lb.y}px) scale(${lb.scale})`;
+  }
+  function openLightbox(plan) {
+    const box = document.getElementById("lightbox");
+    const img = document.getElementById("lbImg");
+    document.getElementById("lbTitle").textContent = plan.title;
+    const dl = document.getElementById("lbDownload");
+    dl.href = plan.full; dl.setAttribute("download", plan.title + ".jpg");
+    img.src = plan.full;
+    box.hidden = false;
+    img.onload = () => {
+      const stage = document.getElementById("lbStage");
+      const s = Math.min(stage.clientWidth / img.naturalWidth, stage.clientHeight / img.naturalHeight);
+      lb.scale = s;
+      lb.x = (stage.clientWidth - img.naturalWidth * s) / 2;
+      lb.y = (stage.clientHeight - img.naturalHeight * s) / 2;
+      lb._fit = s; lbApply();
+    };
+  }
+  function closeLightbox() { document.getElementById("lightbox").hidden = true; document.getElementById("lbImg").src = ""; }
+  function zoomAt(factor, cx, cy) {
+    const stage = document.getElementById("lbStage");
+    const r = stage.getBoundingClientRect();
+    const px = (cx ?? r.width / 2), py = (cy ?? r.height / 2);
+    const ns = Math.max((lb._fit || 0.05) * 0.8, Math.min(lb.scale * factor, 8));
+    lb.x = px - (px - lb.x) * (ns / lb.scale);
+    lb.y = py - (py - lb.y) * (ns / lb.scale);
+    lb.scale = ns; lbApply();
+  }
+  function initLightbox() {
+    const stage = document.getElementById("lbStage");
+    if (!stage) return;
+    document.getElementById("lbClose").addEventListener("click", closeLightbox);
+    document.getElementById("lbZoomIn").addEventListener("click", () => zoomAt(1.3));
+    document.getElementById("lbZoomOut").addEventListener("click", () => zoomAt(1 / 1.3));
+    document.getElementById("lbReset").addEventListener("click", () => {
+      lb.scale = lb._fit; const img = document.getElementById("lbImg");
+      lb.x = (stage.clientWidth - img.naturalWidth * lb.scale) / 2;
+      lb.y = (stage.clientHeight - img.naturalHeight * lb.scale) / 2; lbApply();
+    });
+    document.getElementById("lightbox").addEventListener("click", (e) => { if (e.target.id === "lightbox") closeLightbox(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !document.getElementById("lightbox").hidden) closeLightbox(); });
+    stage.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const r = stage.getBoundingClientRect();
+      zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top);
+    }, { passive: false });
+    stage.addEventListener("pointerdown", (e) => {
+      lb.dragging = true; stage.classList.add("grabbing");
+      lb.sx = e.clientX; lb.sy = e.clientY; lb.ox = lb.x; lb.oy = lb.y;
+      stage.setPointerCapture(e.pointerId);
+    });
+    stage.addEventListener("pointermove", (e) => {
+      if (!lb.dragging) return;
+      lb.x = lb.ox + (e.clientX - lb.sx); lb.y = lb.oy + (e.clientY - lb.sy); lbApply();
+    });
+    const end = () => { lb.dragging = false; stage.classList.remove("grabbing"); };
+    stage.addEventListener("pointerup", end);
+    stage.addEventListener("pointercancel", end);
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     renderStats();
+    renderPlans();
+    initLightbox();
     try {
       if (typeof L !== "undefined") initMap();
       else showMapFallback("تعذّر تحميل مكتبة الخريطة.");

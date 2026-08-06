@@ -105,6 +105,40 @@ tbody tr.main-row.active { background: #223347; }
 .plots-list li { padding: 3px 0; border-bottom: 1px dashed var(--line); }
 
 .empty-state { padding: 30px; text-align: center; color: var(--muted); }
+
+/* المخططات */
+.plans-section { margin-top: 26px; }
+.plans-title { margin: 0 0 4px; font-size: 1.25rem; }
+.plans-hint { margin: 0 0 14px; color: var(--muted); font-size: .9rem; }
+.plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.plan-card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  overflow: hidden; cursor: pointer; box-shadow: var(--shadow);
+  transition: transform .12s, border-color .12s;
+}
+.plan-card:hover { transform: translateY(-3px); border-color: var(--accent-2); }
+.plan-card .thumb { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #0c1219; display: block; }
+.plan-card .meta { padding: 12px 14px; }
+.plan-card .meta .t { font-weight: 700; margin-bottom: 4px; }
+.plan-card .meta .c { color: var(--muted); font-size: .82rem; }
+.plan-card .meta .open { margin-top: 8px; color: var(--accent); font-size: .82rem; }
+
+/* عارض المخطط */
+.lightbox { position: fixed; inset: 0; background: rgba(6,10,15,.94); z-index: 9999; display: flex; flex-direction: column; }
+.lightbox[hidden] { display: none !important; }
+.lb-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; background: #0c1219; border-bottom: 1px solid var(--line); }
+.lb-title { font-weight: 700; font-size: 1rem; }
+.lb-actions { display: flex; gap: 6px; }
+.lb-actions button, .lb-actions a {
+  background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 1rem; text-decoration: none;
+  line-height: 1; display: inline-flex; align-items: center; font-family: inherit;
+}
+.lb-actions button:hover, .lb-actions a:hover { border-color: var(--accent-2); }
+#lbClose:hover { border-color: var(--danger); color: var(--danger); }
+.lb-stage { flex: 1; overflow: hidden; position: relative; cursor: grab; touch-action: none; }
+.lb-stage.grabbing { cursor: grabbing; }
+#lbImg { position: absolute; top: 0; left: 0; transform-origin: 0 0; user-select: none; -webkit-user-drag: none; will-change: transform; }
 .site-footer { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; color: var(--muted); font-size: .82rem; text-align: center; }
 
 .leaflet-popup-content { font-family: inherit; direction: rtl; text-align: right; }
