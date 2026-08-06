@@ -82,7 +82,7 @@
     if (!state.search) return true;
     const q = state.search.toLowerCase();
     const hay = [
-      l.license, l.name, l.trade, l.area, l.activity, l.status,
+      l.license, l.client, l.name, l.trade, l.area, l.activity, l.status,
       ...l.plots.flatMap((p) => [p.block, p.plot]),
       ...l.transfers.flatMap((t) => [t.from, t.to, t.reqNo, t.date]),
     ].filter(Boolean).join(" ").toLowerCase();
@@ -115,6 +115,7 @@
       return `
       <tr class="main-row" data-i="${i}">
         <td>${esc(l.license)}</td>
+        <td>${esc(l.client)}</td>
         <td>${esc(l.area)}</td>
         <td>${esc(plotsLabel(l))}</td>
         <td>${fmtNum(l.totalSize)}</td>
@@ -157,7 +158,7 @@
 
     const row = document.createElement("tr");
     row.className = "detail-row";
-    row.innerHTML = `<td colspan="9"><div class="detail-inner">
+    row.innerHTML = `<td colspan="10"><div class="detail-inner">
         <div class="detail-grid">
           <div><div class="k">الاسم الحالي للترخيص</div><div class="v">${esc(l.name)}</div></div>
           <div><div class="k">الاسم التجاري</div><div class="v">${esc(l.trade)}</div></div>

@@ -52,6 +52,7 @@ def main():
           <thead>
             <tr>
               <th data-key="license">رقم الترخيص</th>
+              <th data-key="client">رقم العميل</th>
               <th data-key="area">المنطقة</th>
               <th data-key="plot">القسيمة</th>
               <th data-key="size">المساحة (م²)</th>
