@@ -11,6 +11,7 @@ def read(name):
 def main():
     leaflet_css = re.sub(r"url\((images/[^)]+)\)", "none", read("vendor/leaflet.css"))
     leaflet_js = read("vendor/leaflet.js")
+    xlsx_js = read("vendor/xlsx.full.min.js")
     style_css = read("style.css")
     data_js = read("data.js")
     plans_js = read("plans.js")
@@ -45,6 +46,7 @@ def main():
       <div class="control"><select id="statusFilter"><option value="">كل الحالات</option></select></div>
       <div class="control"><button id="clearBtn" class="clear-btn" type="button">مسح ✕</button></div>
       <div class="control"><button id="printBtn" class="print-btn" type="button">🖨️ تصدير PDF</button></div>
+      <div class="control"><button id="excelBtn" class="excel-btn" type="button">⬇ تصدير Excel</button></div>
       <div class="result-count" id="resultCount"></div>
     </section>
     <div id="printHeader" class="print-only"></div>
@@ -95,6 +97,9 @@ def main():
   </footer>
   <script>
 {leaflet_js}
+  </script>
+  <script>
+{xlsx_js}
   </script>
   <script>
 {data_js}

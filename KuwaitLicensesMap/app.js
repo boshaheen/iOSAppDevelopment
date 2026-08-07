@@ -217,6 +217,8 @@
     const printBtn = document.getElementById("printBtn");
     if (printBtn) printBtn.addEventListener("click", () => { buildPrintHeader(); window.print(); });
     window.addEventListener("beforeprint", buildPrintHeader);
+    const excelBtn = document.getElementById("excelBtn");
+    if (excelBtn) excelBtn.addEventListener("click", exportExcel);
 
     document.querySelectorAll("thead th").forEach((th) => {
       th.addEventListener("click", () => {
@@ -229,6 +231,41 @@
         render();
       });
     });
+  }
+
+  // ---------- تصدير Excel (كل البيانات) ----------
+  function exportExcel() {
+    if (typeof XLSX === "undefined") { alert("تعذّر تحميل مكتبة Excel."); return; }
+    const wb = XLSX.utils.book_new();
+    const rtl = (ws, widths) => { ws["!views"] = [{ RTL: true }]; if (widths) ws["!cols"] = widths.map((w) => ({ wch: w })); return ws; };
+
+    // ورقة 1: التراخيص
+    const licHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "عدد القسائم", "إجمالي المساحة (م²)",
+      "الاسم الحالي للترخيص", "الاسم التجاري", "النشاط", "حالة الترخيص",
+      "تاريخ البداية", "تاريخ النهاية", "تاريخ التسليم", "عدد حركات التنازل"];
+    const licRows = LICENSES.map((l) => [l.license, l.client, l.area, l.plots.length, l.totalSize,
+      l.name, l.trade, l.activity, l.status, l.start, l.end, l.delivery, l.transfers.length]);
+    XLSX.utils.book_append_sheet(wb,
+      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 22, 10, 16, 30, 30, 50, 12, 13, 13, 13, 12]),
+      "التراخيص");
+
+    // ورقة 2: القسائم
+    const plotHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "القسيمة", "المساحة (م²)", "تاريخ التسليم"];
+    const plotRows = [];
+    LICENSES.forEach((l) => l.plots.forEach((p) => plotRows.push([l.license, l.client, l.area, p.block, p.plot, p.size, p.delivery])));
+    XLSX.utils.book_append_sheet(wb,
+      rtl(XLSX.utils.aoa_to_sheet([plotHead, ...plotRows]), [12, 11, 22, 10, 12, 14, 13]),
+      "القسائم");
+
+    // ورقة 3: حركات التنازل
+    const trHead = ["رقم الترخيص", "الاسم التجاري", "تاريخ الطلب", "رقم الطلب", "متنازل", "متنازل إليه"];
+    const trRows = [];
+    LICENSES.forEach((l) => l.transfers.forEach((t) => trRows.push([l.license, l.trade, t.date, t.reqNo, t.from, t.to])));
+    XLSX.utils.book_append_sheet(wb,
+      rtl(XLSX.utils.aoa_to_sheet([trHead, ...trRows]), [12, 30, 13, 12, 34, 34]),
+      "حركات التنازل");
+
+    XLSX.writeFile(wb, "تراخيص_الشعيبة.xlsx");
   }
 
   function buildPrintHeader() {
