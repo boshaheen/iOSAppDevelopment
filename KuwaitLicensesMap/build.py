@@ -35,7 +35,6 @@ def main():
       <div class="gears" id="gears" aria-hidden="true"></div>
       <div class="logo-card">
         <img id="paiLogo" alt="الهيئة العامة للصناعة" />
-        <div class="splash-sub">نظام التراخيص الصناعية — الشعيبة</div>
       </div>
     </div>
     <div class="splash-hint">اضغط للدخول</div>
