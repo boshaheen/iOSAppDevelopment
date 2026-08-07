@@ -394,7 +394,40 @@
     stage.addEventListener("pointercancel", end);
   }
 
+  // ---------- صفحة الافتتاح (Splash) ----------
+  function gearPath(teeth, outer, inner, cx, cy) {
+    const t = (2 * Math.PI) / teeth, tw = t * 0.20, gv = t * 0.06, pts = [];
+    const P = (r, a) => `${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`;
+    for (let i = 0; i < teeth; i++) {
+      const a = i * t;
+      pts.push(P(inner, a - tw - gv), P(outer, a - tw), P(outer, a + tw), P(inner, a + tw + gv));
+    }
+    return "M" + pts.join(" L ") + " Z";
+  }
+  function initSplash() {
+    const splash = document.getElementById("splash");
+    if (!splash) return;
+    const logo = document.getElementById("paiLogo");
+    if (logo && typeof PAI_LOGO !== "undefined") logo.src = PAI_LOGO;
+    const gears = document.getElementById("gears");
+    if (gears) {
+      const g = (cls, teeth, color) =>
+        `<svg class="${cls}" viewBox="0 0 100 100" aria-hidden="true">
+           <path d="${gearPath(teeth, 48, 33, 50, 50)}" fill="${color}"/>
+           <circle cx="50" cy="50" r="13" fill="none" stroke="${color}" stroke-width="7"/></svg>`;
+      gears.innerHTML =
+        g("gear-a", 14, "rgba(43,182,115,.16)") +
+        g("gear-b", 12, "rgba(226,85,85,.15)") +
+        g("gear-c", 10, "rgba(230,168,53,.17)");
+    }
+    let done = false;
+    const close = () => { if (done) return; done = true; splash.classList.add("hide"); setTimeout(() => { splash.style.display = "none"; }, 900); };
+    splash.addEventListener("click", close);
+    setTimeout(close, 3800);
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
+    initSplash();
     renderStats();
     renderPlans();
     initLightbox();

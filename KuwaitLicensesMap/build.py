@@ -12,6 +12,7 @@ def main():
     leaflet_css = re.sub(r"url\((images/[^)]+)\)", "none", read("vendor/leaflet.css"))
     leaflet_js = read("vendor/leaflet.js")
     xlsx_js = read("vendor/xlsx.full.min.js")
+    assets_js = read("assets.js")
     style_css = read("style.css")
     data_js = read("data.js")
     plans_js = read("plans.js")
@@ -29,6 +30,16 @@ def main():
   </style>
 </head>
 <body>
+  <div id="splash">
+    <div class="splash-inner">
+      <div class="gears" id="gears" aria-hidden="true"></div>
+      <div class="logo-card">
+        <img id="paiLogo" alt="الهيئة العامة للصناعة" />
+        <div class="splash-sub">نظام التراخيص الصناعية — الشعيبة</div>
+      </div>
+    </div>
+    <div class="splash-hint">اضغط للدخول</div>
+  </div>
   <header class="site-header">
     <div class="header-inner">
       <h1>🏭 خريطة التراخيص الصناعية — الشعيبة</h1>
@@ -101,6 +112,9 @@ def main():
   </script>
   <script>
 {xlsx_js}
+  </script>
+  <script>
+{assets_js}
   </script>
   <script>
 {data_js}

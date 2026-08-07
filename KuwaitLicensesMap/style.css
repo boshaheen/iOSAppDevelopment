@@ -117,6 +117,36 @@ tbody tr.main-row.active { background: #223347; }
 
 .empty-state { padding: 30px; text-align: center; color: var(--muted); }
 
+/* صفحة الافتتاح (Splash) */
+#splash {
+  position: fixed; inset: 0; z-index: 100000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 42%, #173a5c, #0a0f16 72%);
+  transition: opacity .85s ease; cursor: pointer;
+}
+#splash.hide { opacity: 0; }
+.splash-inner {
+  position: relative; width: min(92vw, 560px); height: min(92vw, 560px);
+  display: flex; align-items: center; justify-content: center;
+}
+.gears { position: absolute; inset: 0; pointer-events: none; }
+.gears svg { position: absolute; top: 50%; left: 50%; transform-origin: 50% 50%; }
+.gear-a { width: 540px; height: 540px; margin: -270px 0 0 -270px; animation: gearspin 30s linear infinite; }
+.gear-b { width: 300px; height: 300px; margin: -280px 0 0 70px;   animation: gearspin 22s linear infinite reverse; }
+.gear-c { width: 250px; height: 250px; margin: 90px 0 0 -260px;   animation: gearspin 17s linear infinite; }
+@keyframes gearspin { to { transform: rotate(360deg); } }
+.logo-card {
+  position: relative; z-index: 2; background: #fff; border-radius: 22px;
+  padding: 26px 34px; box-shadow: 0 18px 60px rgba(0,0,0,.55);
+  text-align: center; animation: logoIn .9s ease both;
+}
+.logo-card img { width: min(58vw, 240px); height: auto; display: block; margin: 0 auto; }
+.splash-sub { margin-top: 14px; color: #16324f; font-weight: 700; font-size: .95rem; }
+.splash-hint { position: absolute; bottom: 26px; color: #d7e8f5; opacity: .65; font-size: .85rem; animation: pulse 2s ease-in-out infinite; }
+@keyframes logoIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+@keyframes pulse { 0%,100% { opacity: .35; } 50% { opacity: .8; } }
+@media (prefers-reduced-motion: reduce) { .gears svg { animation: none; } }
+
 /* المخططات */
 .plans-section { margin-top: 26px; }
 .plans-title { margin: 0 0 4px; font-size: 1.25rem; }
@@ -169,7 +199,7 @@ tbody tr.main-row.active { background: #223347; }
   @page { size: A4 landscape; margin: 12mm 10mm; }
   html, body { background: #fff !important; color: #000 !important; }
   .site-header, .stats, .map-section, .controls, .plans-section,
-  .site-footer, #lightbox { display: none !important; }
+  .site-footer, #lightbox, #splash { display: none !important; }
   main { max-width: none; margin: 0; padding: 0; }
 
   .print-only { display: block; margin-bottom: 10px; }
