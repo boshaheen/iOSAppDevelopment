@@ -10,6 +10,20 @@
     String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
+  // عدد القسائم المميّزة لكل عميل (تجميع عبر كل تراخيص العميل)
+  const clientPlotCount = (() => {
+    const groups = {};
+    LICENSES.forEach((l) => {
+      const key = l.client || ("__lic_" + l.license);
+      (groups[key] = groups[key] || new Set());
+      l.plots.forEach((p) => groups[key].add(`${l.area}|${p.block}|${p.plot}`));
+    });
+    const counts = {};
+    Object.keys(groups).forEach((k) => { counts[k] = groups[k].size; });
+    return counts;
+  })();
+  const clientPlotsOf = (l) => clientPlotCount[l.client || ("__lic_" + l.license)] ?? l.plots.length;
+
   const plotsLabel = (lic) => {
     if (!lic.plots.length) return "—";
     const p = lic.plots[0];
@@ -94,11 +108,12 @@
     const k = state.sortKey;
     const val = (l) =>
       k === "trCount" ? l.transfers.length :
+      k === "clientPlots" ? clientPlotsOf(l) :
       k === "size" ? (l.totalSize || 0) :
       k === "plot" ? (l.plots[0] ? l.plots[0].plot : "") : l[k];
     return rows.slice().sort((a, b) => {
       let va = val(a), vb = val(b);
-      if (k === "size" || k === "trCount") return ((va || 0) - (vb || 0)) * state.sortDir;
+      if (k === "size" || k === "trCount" || k === "clientPlots") return ((va || 0) - (vb || 0)) * state.sortDir;
       const na = parseFloat(va), nb = parseFloat(vb);
       if (!isNaN(na) && !isNaN(nb)) return (na - nb) * state.sortDir;
       return String(va || "").localeCompare(String(vb || ""), "ar") * state.sortDir;
@@ -116,6 +131,7 @@
       <tr class="main-row" data-i="${i}">
         <td>${esc(l.license)}</td>
         <td>${esc(l.client)}</td>
+        <td>${clientPlotsOf(l)}</td>
         <td>${esc(l.area)}</td>
         <td>${esc(plotsLabel(l))}</td>
         <td>${fmtNum(l.totalSize)}</td>
@@ -160,10 +176,11 @@
 
     const row = document.createElement("tr");
     row.className = "detail-row";
-    row.innerHTML = `<td colspan="11"><div class="detail-inner">
+    row.innerHTML = `<td colspan="12"><div class="detail-inner">
         <div class="detail-grid">
           <div><div class="k">الاسم الحالي للترخيص</div><div class="v">${esc(l.name)}</div></div>
           <div><div class="k">الاسم التجاري</div><div class="v">${esc(l.trade)}</div></div>
+          <div><div class="k">عدد قسائم العميل</div><div class="v">${clientPlotsOf(l)}</div></div>
           <div><div class="k">حالة الترخيص</div><div class="v"><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></div></div>
           <div><div class="k">تاريخ البداية</div><div class="v">${esc(l.start)}</div></div>
           <div><div class="k">تاريخ النهاية</div><div class="v">${esc(l.end)}</div></div>
@@ -240,13 +257,13 @@
     const rtl = (ws, widths) => { ws["!views"] = [{ RTL: true }]; if (widths) ws["!cols"] = widths.map((w) => ({ wch: w })); return ws; };
 
     // ورقة 1: التراخيص
-    const licHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "عدد القسائم", "إجمالي المساحة (م²)",
+    const licHead = ["رقم الترخيص", "رقم العميل", "عدد قسائم العميل", "المنطقة", "عدد القسائم", "إجمالي المساحة (م²)",
       "الاسم الحالي للترخيص", "الاسم التجاري", "النشاط", "حالة الترخيص",
       "تاريخ البداية", "تاريخ النهاية", "تاريخ التسليم", "عدد حركات التنازل"];
-    const licRows = LICENSES.map((l) => [l.license, l.client, l.area, l.plots.length, l.totalSize,
+    const licRows = LICENSES.map((l) => [l.license, l.client, clientPlotsOf(l), l.area, l.plots.length, l.totalSize,
       l.name, l.trade, l.activity, l.status, l.start, l.end, l.delivery, l.transfers.length]);
     XLSX.utils.book_append_sheet(wb,
-      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 22, 10, 16, 30, 30, 50, 12, 13, 13, 13, 12]),
+      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 15, 22, 10, 16, 30, 30, 50, 12, 13, 13, 13, 12]),
       "التراخيص");
 
     // ورقة 2: القسائم
