@@ -103,6 +103,7 @@
       l.license, l.client, l.name, l.trade, l.area, l.activity, l.status, l.delivery,
       ...l.plots.flatMap((p) => [p.block, p.plot]),
       ...l.transfers.flatMap((t) => [t.from, t.to, t.reqNo, t.date]),
+      ...(l.board || []).flatMap((bd) => [bd.decision, bd.subject, bd.minutes, bd.occupant]),
     ].filter(Boolean).join(" ").toLowerCase();
     return hay.includes(q);
   }
@@ -112,12 +113,13 @@
     const k = state.sortKey;
     const val = (l) =>
       k === "trCount" ? l.transfers.length :
+      k === "boardCount" ? (l.board ? l.board.length : 0) :
       k === "clientPlots" ? clientPlotsOf(l) :
       k === "size" ? (l.totalSize || 0) :
       k === "plot" ? (l.plots[0] ? l.plots[0].plot : "") : l[k];
     return rows.slice().sort((a, b) => {
       let va = val(a), vb = val(b);
-      if (k === "size" || k === "trCount" || k === "clientPlots") return ((va || 0) - (vb || 0)) * state.sortDir;
+      if (k === "size" || k === "trCount" || k === "clientPlots" || k === "boardCount") return ((va || 0) - (vb || 0)) * state.sortDir;
       const na = parseFloat(va), nb = parseFloat(vb);
       if (!isNaN(na) && !isNaN(nb)) return (na - nb) * state.sortDir;
       return String(va || "").localeCompare(String(vb || ""), "ar") * state.sortDir;
@@ -146,6 +148,7 @@
         <td>${esc(l.end)}</td>
         <td>${esc(l.delivery)}</td>
         <td>${badge}</td>
+        <td>${(l.board && l.board.length) ? `<span class="badge board">${l.board.length}</span>` : `<span class="badge zero">—</span>`}</td>
       </tr>`;
     }).join("");
 
@@ -179,9 +182,17 @@
          </table>`
       : `<p style="color:var(--muted);margin:0">لا توجد حركات تنازل لهذا الترخيص.</p>`;
 
+    const board = (l.board && l.board.length)
+      ? `<table class="hist-table">
+           <thead><tr><th>المحضر</th><th>التاريخ</th><th>الموضوع</th><th>مستغل القسيمة</th><th>الموقع</th><th>القرار</th></tr></thead>
+           <tbody>${l.board.map((bd) =>
+             `<tr><td>${esc(bd.minutes)}</td><td>${esc(bd.date)}</td><td>${esc(bd.subject)}</td><td>${esc(bd.occupant)}</td><td>${esc(bd.location)}</td><td>${esc(bd.decision)}</td></tr>`).join("")}</tbody>
+         </table>`
+      : `<p style="color:var(--muted);margin:0">لا توجد موافقات مجلس إدارة مرتبطة بهذا السجل.</p>`;
+
     const row = document.createElement("tr");
     row.className = "detail-row";
-    row.innerHTML = `<td colspan="13"><div class="detail-inner">
+    row.innerHTML = `<td colspan="14"><div class="detail-inner">
         <div class="detail-grid">
           <div><div class="k">الاسم الحالي للترخيص</div><div class="v">${esc(l.name)}</div></div>
           <div><div class="k">الاسم التجاري</div><div class="v">${esc(l.trade)}</div></div>
@@ -199,6 +210,8 @@
         <ul class="plots-list">${plots}</ul>
         <h4 style="margin-top:12px">حركات التنازل (${l.transfers.length})</h4>
         ${transfers}
+        <h4 style="margin-top:12px">موافقات مجلس الإدارة (${l.board ? l.board.length : 0})</h4>
+        ${board}
       </div></td>`;
     tr.after(row);
   }
@@ -275,13 +288,14 @@
     const rtl = (ws, widths) => { ws["!views"] = [{ RTL: true }]; if (widths) ws["!cols"] = widths.map((w) => ({ wch: w })); return ws; };
 
     // ورقة 1: التراخيص
+    const boardText = (l) => (l.board || []).map((b) => `${b.minutes} (${b.date}): ${b.decision}`).join(" | ");
     const licHead = ["النوع", "رقم الترخيص", "رقم العميل", "عدد قسائم العميل", "المنطقة", "عدد القسائم", "إجمالي المساحة (م²)",
       "الاسم", "الاسم التجاري", "النشاط", "الحالة", "طبيعة العقد", "خدمي/صناعي",
-      "تاريخ البداية", "تاريخ النهاية", "تاريخ التسليم", "عدد حركات التنازل"];
+      "تاريخ البداية", "تاريخ النهاية", "تاريخ التسليم", "عدد حركات التنازل", "موافقة مجلس الإدارة"];
     const licRows = LICENSES.map((l) => [l.type, l.license, l.client, clientPlotsOf(l), l.area, l.plots.length, l.totalSize,
-      l.name, l.trade, l.activity, l.status, l.contractType, l.kind, l.start, l.end, l.delivery, l.transfers.length]);
+      l.name, l.trade, l.activity, l.status, l.contractType, l.kind, l.start, l.end, l.delivery, l.transfers.length, boardText(l)]);
     XLSX.utils.book_append_sheet(wb,
-      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [8, 12, 11, 15, 22, 10, 16, 30, 30, 50, 12, 12, 12, 13, 13, 13, 12]),
+      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [8, 12, 11, 15, 22, 10, 16, 30, 30, 50, 12, 12, 12, 13, 13, 13, 12, 50]),
       "السجلات");
 
     // ورقة 2: القسائم
@@ -299,6 +313,15 @@
     XLSX.utils.book_append_sheet(wb,
       rtl(XLSX.utils.aoa_to_sheet([trHead, ...trRows]), [12, 30, 13, 12, 34, 34]),
       "حركات التنازل");
+
+    // ورقة 4: موافقات مجلس الإدارة
+    const bHead = ["رقم الترخيص", "رقم العميل", "الاسم", "المحضر", "التاريخ", "الموضوع", "مستغل القسيمة", "الموقع", "القرار"];
+    const bRows = [];
+    LICENSES.forEach((l) => (l.board || []).forEach((bd) =>
+      bRows.push([l.license, l.client, l.name, bd.minutes, bd.date, bd.subject, bd.occupant, bd.location, bd.decision])));
+    XLSX.utils.book_append_sheet(wb,
+      rtl(XLSX.utils.aoa_to_sheet([bHead, ...bRows]), [12, 11, 28, 10, 12, 26, 28, 34, 46]),
+      "موافقات مجلس الإدارة");
 
     XLSX.writeFile(wb, "تراخيص_الشعيبة.xlsx");
   }

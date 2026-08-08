@@ -79,6 +79,7 @@ def main():
               <th data-key="end">تاريخ النهاية</th>
               <th data-key="delivery">تاريخ التسليم</th>
               <th data-key="trCount">حركات التنازل</th>
+              <th data-key="boardCount">موافقة مجلس الإدارة</th>
             </tr>
           </thead>
           <tbody id="licBody"></tbody>

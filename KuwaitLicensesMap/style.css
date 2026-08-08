@@ -94,6 +94,7 @@ tbody tr.main-row.active { background: #223347; }
   border-radius: 20px; padding: 2px 10px; font-size: .8rem;
 }
 .badge.zero { background: var(--line); color: var(--muted); }
+.badge.board { background: #8a5cd0; }
 
 /* نوع السجل */
 .rec-type { display: inline-block; border-radius: 20px; padding: 2px 10px; font-size: .78rem; font-weight: 700; border: 1px solid var(--line); color: var(--muted); background: rgba(147,164,184,.12); white-space: nowrap; }
