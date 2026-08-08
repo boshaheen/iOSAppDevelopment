@@ -87,31 +87,6 @@ def main():
       </div>
       <div id="emptyState" class="empty-state" hidden>لا توجد نتائج مطابقة لبحثك.</div>
     </section>
-    <section class="approvals-section">
-      <h2 class="plans-title">📋 موافقات مجلس الإدارة — الشعيبة</h2>
-      <p class="plans-hint">جميع الموافقات الصادرة عن مجلس الإدارة (بدون قرارات السحب أو الإلغاء).</p>
-      <div class="controls">
-        <div class="control search-box">
-          <input type="text" id="apprSearch" placeholder="🔍 ابحث في الموافقات (الموضوع، المستغل، القرار، رقم المحضر)..." />
-        </div>
-        <div class="control"><select id="apprArea"><option value="">كل المناطق</option></select></div>
-        <div class="control"><button id="apprClear" class="clear-btn" type="button">مسح ✕</button></div>
-        <div class="result-count" id="apprCount"></div>
-      </div>
-      <div class="table-section">
-        <div class="table-wrap approvals-wrap">
-          <table id="approvalsTable">
-            <thead>
-              <tr>
-                <th>المحضر</th><th>التاريخ</th><th>الموضوع</th>
-                <th>مستغل القسيمة</th><th>الموقع</th><th>القرار</th>
-              </tr>
-            </thead>
-            <tbody id="approvalsBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
     <section class="plans-section">
       <h2 class="plans-title">🗺️ مخططات المناطق الصناعية</h2>
       <p class="plans-hint">اضغط على أي مخطط لعرضه بحجم كامل مع إمكانية التكبير والتحريك.</p>
