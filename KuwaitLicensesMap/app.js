@@ -4,25 +4,56 @@
 
   const state = { search: "", area: "", status: "", type: "", sortKey: null, sortDir: 1 };
 
+  // بيانات المنطقة الحالية (تتغيّر عند اختيار المنطقة)
+  let AREAS = [], LICENSES = [], PLANS = [], currentRegionName = "";
+
   const fmtNum = (n) =>
     typeof n === "number" ? n.toLocaleString("en-US", { maximumFractionDigits: 2 }) : (n || "—");
   const esc = (s) =>
     String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-  // عدد القسائم المميّزة لكل عميل (تجميع عبر كل تراخيص العميل)
-  const clientPlotCount = (() => {
+  // عدد القسائم المميّزة لكل عميل (تُحسب لكل منطقة عند تحميلها)
+  let clientPlotCount = {};
+  function computeClientPlots() {
     const groups = {};
     LICENSES.forEach((l) => {
       const key = l.client || ("__lic_" + l.license);
       (groups[key] = groups[key] || new Set());
       l.plots.forEach((p) => groups[key].add(`${l.area}|${p.block}|${p.plot}`));
     });
-    const counts = {};
-    Object.keys(groups).forEach((k) => { counts[k] = groups[k].size; });
-    return counts;
-  })();
+    clientPlotCount = {};
+    Object.keys(groups).forEach((k) => { clientPlotCount[k] = groups[k].size; });
+  }
   const clientPlotsOf = (l) => clientPlotCount[l.client || ("__lic_" + l.license)] ?? l.plots.length;
+
+  // ---------- تحميل المنطقة ----------
+  function loadRegion(name) {
+    const d = (typeof REGION_DATA !== "undefined") ? REGION_DATA[name] : null;
+    if (!d) return;
+    AREAS = d.areas || [];
+    LICENSES = d.licenses || [];
+    PLANS = (typeof REGION_PLANS !== "undefined" && REGION_PLANS[name]) ? REGION_PLANS[name] : [];
+    currentRegionName = name;
+    state.search = ""; state.area = ""; state.status = ""; state.type = "";
+    state.sortKey = null; state.sortDir = 1;
+    const si = document.getElementById("search"); if (si) si.value = "";
+    document.querySelectorAll("thead th").forEach((x) => x.classList.remove("sorted-asc", "sorted-desc"));
+    computeClientPlots();
+    updateHeader(name);
+    populateFilters();
+    drawAreas();
+    renderStats();
+    renderPlans();
+    render();
+  }
+
+  function updateHeader(name) {
+    const h1 = document.querySelector(".site-header h1");
+    if (h1) h1.textContent = `🏭 مصانع وتراخيص ${name}`;
+    const sub = document.querySelector(".site-header .subtitle");
+    if (sub) sub.textContent = `خريطة تفاعلية لمصانع وتراخيص ${name} — مع حركات التنازل`;
+  }
 
   const plotsLabel = (lic) => {
     if (!lic.plots.length) return "—";
@@ -52,7 +83,7 @@
   // ---------- الخريطة ----------
   let map, markers = {};
   function initMap() {
-    map = L.map("map", { scrollWheelZoom: false }).setView([29.05, 48.14], 11);
+    map = L.map("map", { scrollWheelZoom: false }).setView([29.15, 48.0], 10);
     // خلفية صور الأقمار الصناعية من Esri + طبقة أسماء الأماكن فوقها
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
       maxZoom: 19, attribution: "Imagery © Esri, Maxar, Earthstar Geographics",
@@ -60,7 +91,14 @@
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
       maxZoom: 19, opacity: 0.9, attribution: "",
     }).addTo(map);
+  }
 
+  // رسم علامات المنطقة الحالية (يُستدعى عند تحميل المنطقة)
+  function drawAreas() {
+    if (!map) return;
+    Object.values(markers).forEach((m) => map.removeLayer(m));
+    markers = {};
+    if (!AREAS.length) return;
     const maxCount = Math.max(...AREAS.map((a) => a.count), 1);
     AREAS.forEach((a) => {
       const radius = 12 + (a.count / maxCount) * 22;
@@ -69,9 +107,9 @@
       }).addTo(map);
       m.bindTooltip(`${a.name} (${a.count})`, { direction: "top" });
       m.bindPopup(
-        `<div class="map-popup"><b>${esc(a.name)}</b><br/>عدد التراخيص: ${a.count}<br/>
+        `<div class="map-popup"><b>${esc(a.name)}</b><br/>عدد السجلات: ${a.count}<br/>
          إجمالي المساحة: ${fmtNum(a.totalSize)} م²<br/>
-         <button data-area="${esc(a.name)}">عرض تراخيص المنطقة ↓</button></div>`);
+         <button data-area="${esc(a.name)}">عرض سجلات المنطقة ↓</button></div>`);
       m.on("popupopen", (e) => {
         const btn = e.popup.getElement().querySelector("button[data-area]");
         if (btn) btn.addEventListener("click", () => {
@@ -82,6 +120,12 @@
       m.on("click", () => selectArea(a.name));
       markers[a.name] = m;
     });
+    // ضبط العرض على مركز المنطقة
+    if (AREAS.length === 1) map.setView([AREAS[0].lat, AREAS[0].lng], 12);
+    else {
+      const b = L.latLngBounds(AREAS.map((a) => [a.lat, a.lng]));
+      map.fitBounds(b.pad(0.4));
+    }
   }
 
   function selectArea(name) {
@@ -217,35 +261,38 @@
   }
 
   // ---------- عناصر التحكم ----------
-  function initControls() {
+  // تعبئة القوائم المنسدلة حسب المنطقة الحالية
+  function populateFilters() {
     const areaSel = document.getElementById("areaFilter");
-    AREAS.forEach((a) => {
-      const o = document.createElement("option");
-      o.value = a.name; o.textContent = `${a.name} (${a.count})`;
-      areaSel.appendChild(o);
-    });
+    if (areaSel) {
+      areaSel.innerHTML = `<option value="">كل المناطق</option>` +
+        AREAS.map((a) => `<option value="${esc(a.name)}">${esc(a.name)} (${a.count})</option>`).join("");
+    }
     const statusSel = document.getElementById("statusFilter");
-    [...new Set(LICENSES.map((l) => l.status).filter(Boolean))].forEach((st) => {
-      const o = document.createElement("option");
-      o.value = st; o.textContent = st;
-      statusSel.appendChild(o);
-    });
+    if (statusSel) {
+      statusSel.innerHTML = `<option value="">كل الحالات</option>` +
+        [...new Set(LICENSES.map((l) => l.status).filter(Boolean))].map((st) => `<option value="${esc(st)}">${esc(st)}</option>`).join("");
+    }
     const typeSel = document.getElementById("typeFilter");
     if (typeSel) {
-      [...new Set(LICENSES.map((l) => l.type).filter(Boolean))].forEach((tp) => {
-        const o = document.createElement("option");
-        o.value = tp; o.textContent = tp;
-        typeSel.appendChild(o);
-      });
-      typeSel.addEventListener("change", (e) => { state.type = e.target.value; render(); });
+      typeSel.innerHTML = `<option value="">كل الأنواع</option>` +
+        [...new Set(LICENSES.map((l) => l.type).filter(Boolean))].map((tp) => `<option value="${esc(tp)}">${esc(tp)}</option>`).join("");
     }
+  }
+
+  // ربط المستمعات مرة واحدة
+  function bindControls() {
+    const areaSel = document.getElementById("areaFilter");
+    const statusSel = document.getElementById("statusFilter");
+    const typeSel = document.getElementById("typeFilter");
+    if (typeSel) typeSel.addEventListener("change", (e) => { state.type = e.target.value; render(); });
 
     let t;
     document.getElementById("search").addEventListener("input", (e) => {
       clearTimeout(t);
       t = setTimeout(() => { state.search = e.target.value.trim(); render(); }, 180);
     });
-    areaSel.addEventListener("change", (e) => {
+    if (areaSel) areaSel.addEventListener("change", (e) => {
       state.area = e.target.value;
       if (state.area && markers[state.area]) {
         const a = AREAS.find((x) => x.name === state.area);
@@ -253,14 +300,19 @@
       }
       render();
     });
-    statusSel.addEventListener("change", (e) => { state.status = e.target.value; render(); });
+    if (statusSel) statusSel.addEventListener("change", (e) => { state.status = e.target.value; render(); });
     document.getElementById("clearBtn").addEventListener("click", () => {
       state.search = ""; state.area = ""; state.status = ""; state.type = "";
       document.getElementById("search").value = "";
-      areaSel.value = ""; statusSel.value = "";
+      if (areaSel) areaSel.value = ""; if (statusSel) statusSel.value = "";
       if (typeSel) typeSel.value = "";
-      if (map) map.flyTo([29.05, 48.14], 11, { duration: 0.6 });
+      if (map && AREAS.length === 1) map.flyTo([AREAS[0].lat, AREAS[0].lng], 12, { duration: 0.6 });
       render();
+    });
+    const back = document.getElementById("backRegions");
+    if (back) back.addEventListener("click", () => {
+      const reg = document.getElementById("regions");
+      if (reg) { reg.style.display = ""; reg.classList.remove("hide"); window.scrollTo(0, 0); setTimeout(() => { if (regMap) regMap.invalidateSize(); }, 60); }
     });
     const printBtn = document.getElementById("printBtn");
     if (printBtn) printBtn.addEventListener("click", () => { buildPrintHeader(); window.print(); });
@@ -323,7 +375,7 @@
       rtl(XLSX.utils.aoa_to_sheet([bHead, ...bRows]), [12, 11, 28, 10, 12, 24, 28, 32, 46, 30]),
       "موافقات مجلس الإدارة");
 
-    XLSX.writeFile(wb, "تراخيص_الشعيبة.xlsx");
+    XLSX.writeFile(wb, `تراخيص_${currentRegionName || "المنطقة"}.xlsx`);
   }
 
   function buildPrintHeader() {
@@ -336,9 +388,9 @@
     if (state.area) filters.push(`المنطقة: ${state.area}`);
     if (state.status) filters.push(`الحالة: ${state.status}`);
     if (state.search) filters.push(`بحث: ${state.search}`);
-    const fTxt = filters.length ? filters.join(" — ") : "بدون تصفية (كل التراخيص)";
+    const fTxt = filters.length ? filters.join(" — ") : "بدون تصفية (كل السجلات)";
     el.innerHTML =
-      `<h2>تقرير التراخيص الصناعية — الشعيبة</h2>
+      `<h2>تقرير مصانع وتراخيص ${esc(currentRegionName || "")}</h2>
        <div class="meta">
          <span>تاريخ التصدير: ${esc(today)}</span>
          <span>عدد التراخيص: ${shown}</span>
@@ -358,7 +410,9 @@
   // ---------- المخططات + العارض المكبّر ----------
   function renderPlans() {
     const grid = document.getElementById("plansGrid");
-    if (!grid || typeof PLANS === "undefined") return;
+    const sec = document.querySelector(".plans-section");
+    if (sec) sec.style.display = (PLANS && PLANS.length) ? "" : "none";
+    if (!grid || !PLANS || !PLANS.length) { if (grid) grid.innerHTML = ""; return; }
     grid.innerHTML = PLANS.map((p, i) => `
       <div class="plan-card" data-i="${i}">
         <img class="thumb" src="${p.thumb}" alt="${esc(p.title)}" loading="lazy" />
@@ -439,11 +493,11 @@
   // ---------- صفحة اختيار المناطق ----------
   const REGIONS = [
     { name: "الشعيبة الصناعية", lat: 29.02, lng: 48.13, active: true },
+    { name: "صبحان الصناعية", lat: 29.242, lng: 48.02, active: true },
     { name: "الشويخ الصناعية", lat: 29.338, lng: 47.93 },
     { name: "الري", lat: 29.302, lng: 47.925 },
     { name: "أمغرة الصناعية", lat: 29.352, lng: 47.782 },
     { name: "جنوب أمغرة", lat: 29.322, lng: 47.802 },
-    { name: "صبحان الصناعية", lat: 29.242, lng: 48.02 },
     { name: "الصليبية الصناعية", lat: 29.262, lng: 47.86 },
     { name: "المرقاب الصناعية", lat: 29.366, lng: 47.984 },
     { name: "النعايم", lat: 29.285, lng: 47.229 },
@@ -452,12 +506,14 @@
     { name: "ميناء عبدالله الصناعية", lat: 29.02, lng: 48.16 },
   ];
   let regMap;
-  function enterApp() {
+  function enterApp(name) {
+    if (name) loadRegion(name);
     const reg = document.getElementById("regions");
     if (!reg || reg.classList.contains("hide")) return;
     reg.classList.add("hide");
     setTimeout(() => { reg.style.display = "none"; }, 750);
-    setTimeout(() => { if (map) map.invalidateSize(); }, 350);
+    setTimeout(() => { if (map) { map.invalidateSize(); if (AREAS.length === 1) map.setView([AREAS[0].lat, AREAS[0].lng], 12); } }, 350);
+    window.scrollTo(0, 0);
   }
   function initRegions() {
     const el = document.getElementById("regionsMap");
@@ -476,8 +532,8 @@
           m.bindTooltip(r.name + (r.active ? "" : " — قريباً"), { direction: "top" });
           if (r.active) {
             m.bindPopup(`<div class="map-popup"><b>${esc(r.name)}</b><br/>متاح الآن<br/><button data-enter="1">افتح التقرير ↦</button></div>`);
-            m.on("popupopen", (e) => { const b = e.popup.getElement().querySelector("button[data-enter]"); if (b) b.addEventListener("click", enterApp); });
-            m.on("click", (e) => { if (!e.originalEvent.detail || e.originalEvent.detail >= 2) enterApp(); });
+            m.on("popupopen", (e) => { const b = e.popup.getElement().querySelector("button[data-enter]"); if (b) b.addEventListener("click", () => enterApp(r.name)); });
+            m.on("click", () => enterApp(r.name));
           } else {
             m.bindPopup(`<div class="map-popup"><b>${esc(r.name)}</b><br/>قريباً</div>`);
           }
@@ -487,11 +543,11 @@
     const cards = document.getElementById("regionCards");
     if (cards) {
       cards.innerHTML = REGIONS.map((r) =>
-        `<div class="region-card ${r.active ? "active" : "soon"}">
+        `<div class="region-card ${r.active ? "active" : "soon"}" data-name="${esc(r.name)}">
            <div class="rc-name">${esc(r.name)}</div>
            <div class="rc-status">${r.active ? "متاح الآن ✓" : "قريباً"}</div>
          </div>`).join("");
-      cards.querySelectorAll(".region-card.active").forEach((c) => c.addEventListener("click", enterApp));
+      cards.querySelectorAll(".region-card.active").forEach((c) => c.addEventListener("click", () => enterApp(c.dataset.name)));
     }
   }
 
@@ -535,14 +591,14 @@
   document.addEventListener("DOMContentLoaded", () => {
     initSplash();
     initRegions();
-    renderStats();
-    renderPlans();
     initLightbox();
     try {
       if (typeof L !== "undefined") initMap();
       else showMapFallback("تعذّر تحميل مكتبة الخريطة.");
     } catch (e) { console.error(e); showMapFallback("تعذّر عرض الخريطة في هذه البيئة."); }
-    initControls();
-    render();
+    bindControls();
+    // تحميل أول منطقة متاحة افتراضياً (يظهر التقرير بعد اختيار المنطقة)
+    const first = REGIONS.find((r) => r.active);
+    if (first) loadRegion(first.name);
   });
 })();

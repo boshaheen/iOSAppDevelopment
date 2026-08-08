@@ -50,6 +50,7 @@ def main():
   </div>
   <header class="site-header">
     <div class="header-inner">
+      <button id="backRegions" class="back-regions" type="button">🗺️ المناطق</button>
       <h1>🏭 مصانع وتراخيص الشعيبة الصناعية</h1>
       <p class="subtitle">خريطة تفاعلية لمصانع وتراخيص الشعيبة (الغربية والشرقية) — مع حركات التنازل وتاريخ التسليم</p>
     </div>
