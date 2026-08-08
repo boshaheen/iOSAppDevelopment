@@ -436,6 +436,65 @@
     stage.addEventListener("pointercancel", end);
   }
 
+  // ---------- صفحة اختيار المناطق ----------
+  const REGIONS = [
+    { name: "الشعيبة الصناعية", lat: 29.02, lng: 48.13, active: true },
+    { name: "الشويخ الصناعية", lat: 29.338, lng: 47.93 },
+    { name: "الري", lat: 29.302, lng: 47.925 },
+    { name: "أمغرة الصناعية", lat: 29.352, lng: 47.782 },
+    { name: "جنوب أمغرة", lat: 29.322, lng: 47.802 },
+    { name: "صبحان الصناعية", lat: 29.242, lng: 48.02 },
+    { name: "الصليبية الصناعية", lat: 29.262, lng: 47.86 },
+    { name: "المرقاب الصناعية", lat: 29.366, lng: 47.984 },
+    { name: "النعايم", lat: 29.285, lng: 47.229 },
+    { name: "الفحيحيل", lat: 29.082, lng: 48.13 },
+    { name: "شرق الأحمدي", lat: 29.06, lng: 48.11 },
+    { name: "ميناء عبدالله الصناعية", lat: 29.02, lng: 48.16 },
+  ];
+  let regMap;
+  function enterApp() {
+    const reg = document.getElementById("regions");
+    if (!reg || reg.classList.contains("hide")) return;
+    reg.classList.add("hide");
+    setTimeout(() => { reg.style.display = "none"; }, 750);
+    setTimeout(() => { if (map) map.invalidateSize(); }, 350);
+  }
+  function initRegions() {
+    const el = document.getElementById("regionsMap");
+    const logo = document.getElementById("regLogo");
+    if (logo && typeof PAI_LOGO !== "undefined") logo.src = PAI_LOGO;
+    if (el && typeof L !== "undefined") {
+      try {
+        regMap = L.map("regionsMap", { scrollWheelZoom: false }).setView([29.28, 47.85], 8);
+        L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Imagery © Esri" }).addTo(regMap);
+        L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, opacity: 0.9 }).addTo(regMap);
+        REGIONS.forEach((r) => {
+          const m = L.circleMarker([r.lat, r.lng], {
+            radius: r.active ? 14 : 9, color: "#fff", weight: 2.5,
+            fillColor: r.active ? "#2bb673" : "#8595a8", fillOpacity: r.active ? 0.92 : 0.6,
+          }).addTo(regMap);
+          m.bindTooltip(r.name + (r.active ? "" : " — قريباً"), { direction: "top" });
+          if (r.active) {
+            m.bindPopup(`<div class="map-popup"><b>${esc(r.name)}</b><br/>متاح الآن<br/><button data-enter="1">افتح التقرير ↦</button></div>`);
+            m.on("popupopen", (e) => { const b = e.popup.getElement().querySelector("button[data-enter]"); if (b) b.addEventListener("click", enterApp); });
+            m.on("click", (e) => { if (!e.originalEvent.detail || e.originalEvent.detail >= 2) enterApp(); });
+          } else {
+            m.bindPopup(`<div class="map-popup"><b>${esc(r.name)}</b><br/>قريباً</div>`);
+          }
+        });
+      } catch (e) { console.error("regions map failed", e); }
+    }
+    const cards = document.getElementById("regionCards");
+    if (cards) {
+      cards.innerHTML = REGIONS.map((r) =>
+        `<div class="region-card ${r.active ? "active" : "soon"}">
+           <div class="rc-name">${esc(r.name)}</div>
+           <div class="rc-status">${r.active ? "متاح الآن ✓" : "قريباً"}</div>
+         </div>`).join("");
+      cards.querySelectorAll(".region-card.active").forEach((c) => c.addEventListener("click", enterApp));
+    }
+  }
+
   // ---------- صفحة الافتتاح (Splash) ----------
   function gearPath(teeth, outer, inner, cx, cy) {
     const t = (2 * Math.PI) / teeth, tw = t * 0.20, gv = t * 0.06, pts = [];
@@ -463,13 +522,19 @@
         g("gear-c", 10, "rgba(230,168,53,.17)");
     }
     let done = false;
-    const close = () => { if (done) return; done = true; splash.classList.add("hide"); setTimeout(() => { splash.style.display = "none"; }, 900); };
+    const close = () => {
+      if (done) return; done = true;
+      splash.classList.add("hide");
+      setTimeout(() => { splash.style.display = "none"; }, 900);
+      setTimeout(() => { if (regMap) regMap.invalidateSize(); }, 400);
+    };
     splash.addEventListener("click", close);
     setTimeout(close, 3800);
   }
 
   document.addEventListener("DOMContentLoaded", () => {
     initSplash();
+    initRegions();
     renderStats();
     renderPlans();
     initLightbox();

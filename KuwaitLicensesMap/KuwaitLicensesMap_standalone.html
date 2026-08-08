@@ -802,6 +802,30 @@ tbody tr.main-row.active { background: #223347; }
 #approvalsTable .loc-cell { min-width: 200px; color: var(--muted); }
 #approvalsTable .dec-cell { min-width: 260px; }
 
+/* صفحة اختيار المناطق */
+#regions {
+  position: fixed; inset: 0; z-index: 90000; overflow-y: auto;
+  background: radial-gradient(circle at 50% 0%, #16324f, #0a0f16 60%);
+  transition: opacity .7s ease; padding: 22px 16px 40px;
+}
+#regions.hide { opacity: 0; }
+.regions-head { max-width: 1100px; margin: 0 auto 16px; text-align: center; }
+.reg-logo { width: 120px; height: auto; background: #fff; border-radius: 14px; padding: 8px 12px; box-shadow: 0 8px 26px rgba(0,0,0,.4); }
+.regions-head h1 { margin: 14px 0 4px; font-size: 1.6rem; }
+.regions-head p { margin: 0; color: var(--muted); }
+.regions-head p b { color: var(--accent); }
+#regionsMap { max-width: 1100px; height: 46vh; min-height: 300px; margin: 0 auto 18px; border-radius: 14px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+.region-cards { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.region-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; text-align: center; }
+.region-card .rc-name { font-weight: 700; margin-bottom: 6px; }
+.region-card .rc-status { font-size: .82rem; }
+.region-card.active { cursor: pointer; border-color: var(--accent); background: linear-gradient(180deg, rgba(43,182,115,.14), var(--panel)); transition: transform .12s; }
+.region-card.active:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.region-card.active .rc-status { color: var(--accent); font-weight: 700; }
+.region-card.soon { opacity: .72; }
+.region-card.soon .rc-status { color: var(--muted); }
+.region-card.soon .rc-status::before { content: "🔒 "; }
+
 /* صفحة الافتتاح (Splash) */
 #splash {
   position: fixed; inset: 0; z-index: 100000;
@@ -884,7 +908,7 @@ tbody tr.main-row.active { background: #223347; }
   @page { size: A4 landscape; margin: 12mm 10mm; }
   html, body { background: #fff !important; color: #000 !important; }
   .site-header, .stats, .map-section, .controls, .plans-section, .approvals-section,
-  .site-footer, #lightbox, #splash { display: none !important; }
+  .site-footer, #lightbox, #splash, #regions { display: none !important; }
   main { max-width: none; margin: 0; padding: 0; }
 
   .print-only { display: block; margin-bottom: 10px; }
@@ -923,6 +947,15 @@ tbody tr.main-row.active { background: #223347; }
       </div>
     </div>
     <div class="splash-hint">اضغط للدخول</div>
+  </div>
+  <div id="regions">
+    <div class="regions-head">
+      <img id="regLogo" class="reg-logo" alt="الهيئة العامة للصناعة" />
+      <h1>المناطق الصناعية في دولة الكويت</h1>
+      <p>اختر المنطقة لعرض تقريرها — المتاح حالياً: <b>الشعيبة الصناعية</b></p>
+    </div>
+    <div id="regionsMap"></div>
+    <div class="region-cards" id="regionCards"></div>
   </div>
   <header class="site-header">
     <div class="header-inner">
@@ -1481,6 +1514,65 @@ const PLANS = [{"id": "plan1", "title": "الشعيبة الغربية — قط�
     stage.addEventListener("pointercancel", end);
   }
 
+  // ---------- صفحة اختيار المناطق ----------
+  const REGIONS = [
+    { name: "الشعيبة الصناعية", lat: 29.02, lng: 48.13, active: true },
+    { name: "الشويخ الصناعية", lat: 29.338, lng: 47.93 },
+    { name: "الري", lat: 29.302, lng: 47.925 },
+    { name: "أمغرة الصناعية", lat: 29.352, lng: 47.782 },
+    { name: "جنوب أمغرة", lat: 29.322, lng: 47.802 },
+    { name: "صبحان الصناعية", lat: 29.242, lng: 48.02 },
+    { name: "الصليبية الصناعية", lat: 29.262, lng: 47.86 },
+    { name: "المرقاب الصناعية", lat: 29.366, lng: 47.984 },
+    { name: "النعايم", lat: 29.285, lng: 47.229 },
+    { name: "الفحيحيل", lat: 29.082, lng: 48.13 },
+    { name: "شرق الأحمدي", lat: 29.06, lng: 48.11 },
+    { name: "ميناء عبدالله الصناعية", lat: 29.02, lng: 48.16 },
+  ];
+  let regMap;
+  function enterApp() {
+    const reg = document.getElementById("regions");
+    if (!reg || reg.classList.contains("hide")) return;
+    reg.classList.add("hide");
+    setTimeout(() => { reg.style.display = "none"; }, 750);
+    setTimeout(() => { if (map) map.invalidateSize(); }, 350);
+  }
+  function initRegions() {
+    const el = document.getElementById("regionsMap");
+    const logo = document.getElementById("regLogo");
+    if (logo && typeof PAI_LOGO !== "undefined") logo.src = PAI_LOGO;
+    if (el && typeof L !== "undefined") {
+      try {
+        regMap = L.map("regionsMap", { scrollWheelZoom: false }).setView([29.28, 47.85], 8);
+        L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Imagery © Esri" }).addTo(regMap);
+        L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, opacity: 0.9 }).addTo(regMap);
+        REGIONS.forEach((r) => {
+          const m = L.circleMarker([r.lat, r.lng], {
+            radius: r.active ? 14 : 9, color: "#fff", weight: 2.5,
+            fillColor: r.active ? "#2bb673" : "#8595a8", fillOpacity: r.active ? 0.92 : 0.6,
+          }).addTo(regMap);
+          m.bindTooltip(r.name + (r.active ? "" : " — قريباً"), { direction: "top" });
+          if (r.active) {
+            m.bindPopup(`<div class="map-popup"><b>${esc(r.name)}</b><br/>متاح الآن<br/><button data-enter="1">افتح التقرير ↦</button></div>`);
+            m.on("popupopen", (e) => { const b = e.popup.getElement().querySelector("button[data-enter]"); if (b) b.addEventListener("click", enterApp); });
+            m.on("click", (e) => { if (!e.originalEvent.detail || e.originalEvent.detail >= 2) enterApp(); });
+          } else {
+            m.bindPopup(`<div class="map-popup"><b>${esc(r.name)}</b><br/>قريباً</div>`);
+          }
+        });
+      } catch (e) { console.error("regions map failed", e); }
+    }
+    const cards = document.getElementById("regionCards");
+    if (cards) {
+      cards.innerHTML = REGIONS.map((r) =>
+        `<div class="region-card ${r.active ? "active" : "soon"}">
+           <div class="rc-name">${esc(r.name)}</div>
+           <div class="rc-status">${r.active ? "متاح الآن ✓" : "قريباً"}</div>
+         </div>`).join("");
+      cards.querySelectorAll(".region-card.active").forEach((c) => c.addEventListener("click", enterApp));
+    }
+  }
+
   // ---------- صفحة الافتتاح (Splash) ----------
   function gearPath(teeth, outer, inner, cx, cy) {
     const t = (2 * Math.PI) / teeth, tw = t * 0.20, gv = t * 0.06, pts = [];
@@ -1508,13 +1600,19 @@ const PLANS = [{"id": "plan1", "title": "الشعيبة الغربية — قط�
         g("gear-c", 10, "rgba(230,168,53,.17)");
     }
     let done = false;
-    const close = () => { if (done) return; done = true; splash.classList.add("hide"); setTimeout(() => { splash.style.display = "none"; }, 900); };
+    const close = () => {
+      if (done) return; done = true;
+      splash.classList.add("hide");
+      setTimeout(() => { splash.style.display = "none"; }, 900);
+      setTimeout(() => { if (regMap) regMap.invalidateSize(); }, 400);
+    };
     splash.addEventListener("click", close);
     setTimeout(close, 3800);
   }
 
   document.addEventListener("DOMContentLoaded", () => {
     initSplash();
+    initRegions();
     renderStats();
     renderPlans();
     initLightbox();

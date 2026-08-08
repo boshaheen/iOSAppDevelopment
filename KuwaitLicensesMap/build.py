@@ -39,6 +39,15 @@ def main():
     </div>
     <div class="splash-hint">اضغط للدخول</div>
   </div>
+  <div id="regions">
+    <div class="regions-head">
+      <img id="regLogo" class="reg-logo" alt="الهيئة العامة للصناعة" />
+      <h1>المناطق الصناعية في دولة الكويت</h1>
+      <p>اختر المنطقة لعرض تقريرها — المتاح حالياً: <b>الشعيبة الصناعية</b></p>
+    </div>
+    <div id="regionsMap"></div>
+    <div class="region-cards" id="regionCards"></div>
+  </div>
   <header class="site-header">
     <div class="header-inner">
       <h1>🏭 مصانع وتراخيص الشعيبة الصناعية</h1>

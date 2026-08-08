@@ -133,6 +133,30 @@ tbody tr.main-row.active { background: #223347; }
 #approvalsTable .loc-cell { min-width: 200px; color: var(--muted); }
 #approvalsTable .dec-cell { min-width: 260px; }
 
+/* صفحة اختيار المناطق */
+#regions {
+  position: fixed; inset: 0; z-index: 90000; overflow-y: auto;
+  background: radial-gradient(circle at 50% 0%, #16324f, #0a0f16 60%);
+  transition: opacity .7s ease; padding: 22px 16px 40px;
+}
+#regions.hide { opacity: 0; }
+.regions-head { max-width: 1100px; margin: 0 auto 16px; text-align: center; }
+.reg-logo { width: 120px; height: auto; background: #fff; border-radius: 14px; padding: 8px 12px; box-shadow: 0 8px 26px rgba(0,0,0,.4); }
+.regions-head h1 { margin: 14px 0 4px; font-size: 1.6rem; }
+.regions-head p { margin: 0; color: var(--muted); }
+.regions-head p b { color: var(--accent); }
+#regionsMap { max-width: 1100px; height: 46vh; min-height: 300px; margin: 0 auto 18px; border-radius: 14px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+.region-cards { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.region-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; text-align: center; }
+.region-card .rc-name { font-weight: 700; margin-bottom: 6px; }
+.region-card .rc-status { font-size: .82rem; }
+.region-card.active { cursor: pointer; border-color: var(--accent); background: linear-gradient(180deg, rgba(43,182,115,.14), var(--panel)); transition: transform .12s; }
+.region-card.active:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.region-card.active .rc-status { color: var(--accent); font-weight: 700; }
+.region-card.soon { opacity: .72; }
+.region-card.soon .rc-status { color: var(--muted); }
+.region-card.soon .rc-status::before { content: "🔒 "; }
+
 /* صفحة الافتتاح (Splash) */
 #splash {
   position: fixed; inset: 0; z-index: 100000;
@@ -215,7 +239,7 @@ tbody tr.main-row.active { background: #223347; }
   @page { size: A4 landscape; margin: 12mm 10mm; }
   html, body { background: #fff !important; color: #000 !important; }
   .site-header, .stats, .map-section, .controls, .plans-section, .approvals-section,
-  .site-footer, #lightbox, #splash { display: none !important; }
+  .site-footer, #lightbox, #splash, #regions { display: none !important; }
   main { max-width: none; margin: 0; padding: 0; }
 
   .print-only { display: block; margin-bottom: 10px; }
