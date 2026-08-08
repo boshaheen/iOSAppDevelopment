@@ -95,8 +95,14 @@ tbody tr.main-row.active { background: #223347; }
 }
 .badge.zero { background: var(--line); color: var(--muted); }
 
+/* نوع السجل */
+.rec-type { display: inline-block; border-radius: 20px; padding: 2px 10px; font-size: .78rem; font-weight: 700; border: 1px solid var(--line); color: var(--muted); background: rgba(147,164,184,.12); white-space: nowrap; }
+.rec-type.مصنع  { background: rgba(43,182,115,.16); color: #46d391; border-color: #2bb673; }
+.rec-type.ترخيص { background: rgba(58,154,217,.16); color: #7cc0ef; border-color: #3a9ad9; }
+
 /* حالة الترخيص */
-.status { display: inline-block; border-radius: 20px; padding: 2px 12px; font-size: .82rem; font-weight: 600; }
+.status { display: inline-block; border-radius: 20px; padding: 2px 12px; font-size: .82rem; font-weight: 600;
+  background: rgba(147,164,184,.15); color: #b7c4d4; border: 1px solid var(--line); white-space: nowrap; }
 .status.قائم   { background: rgba(43,182,115,.18); color: #46d391; border: 1px solid #2bb673; }
 .status.ملغي   { background: rgba(226,85,85,.18);  color: #f18b8b; border: 1px solid #e25555; }
 .status.مرهون  { background: rgba(230,168,53,.18); color: #f0c05a; border: 1px solid #e6a835; }

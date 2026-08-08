@@ -41,8 +41,8 @@ def main():
   </div>
   <header class="site-header">
     <div class="header-inner">
-      <h1>🏭 خريطة التراخيص الصناعية — الشعيبة</h1>
-      <p class="subtitle">خريطة تفاعلية للمناطق الصناعية وتراخيصها — كل ترخيص مرة واحدة، وعند الضغط عليه تظهر حركات التنازل</p>
+      <h1>🏭 مصانع وتراخيص الشعيبة الصناعية</h1>
+      <p class="subtitle">خريطة تفاعلية لمصانع وتراخيص الشعيبة (الغربية والشرقية) — مع حركات التنازل وتاريخ التسليم</p>
     </div>
   </header>
   <main>
@@ -52,6 +52,7 @@ def main():
       <div class="control search-box">
         <input type="text" id="search" placeholder="🔍 ابحث برقم الترخيص، الاسم التجاري، المتنازل/المتنازل إليه، النشاط..." />
       </div>
+      <div class="control"><select id="typeFilter"><option value="">كل الأنواع</option></select></div>
       <div class="control"><select id="areaFilter"><option value="">كل المناطق</option></select></div>
       <div class="control"><select id="statusFilter"><option value="">كل الحالات</option></select></div>
       <div class="control"><button id="clearBtn" class="clear-btn" type="button">مسح ✕</button></div>
@@ -65,6 +66,7 @@ def main():
         <table id="licTable">
           <thead>
             <tr>
+              <th data-key="type">النوع</th>
               <th data-key="license">رقم الترخيص</th>
               <th data-key="client">رقم العميل</th>
               <th data-key="clientPlots">قسائم العميل</th>

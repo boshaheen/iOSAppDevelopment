@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  const state = { search: "", area: "", status: "", sortKey: null, sortDir: 1 };
+  const state = { search: "", area: "", status: "", type: "", sortKey: null, sortDir: 1 };
 
   const fmtNum = (n) =>
     typeof n === "number" ? n.toLocaleString("en-US", { maximumFractionDigits: 2 }) : (n || "—");
@@ -35,10 +35,13 @@
   function renderStats() {
     const totalSize = LICENSES.reduce((s, l) => s + (l.totalSize || 0), 0);
     const active = LICENSES.filter((l) => l.status === "قائم").length;
+    const factories = LICENSES.filter((l) => l.type === "مصنع").length;
+    const licenses = LICENSES.filter((l) => l.type === "ترخيص").length;
     const cards = [
-      { num: LICENSES.length.toLocaleString("en-US"), lbl: "إجمالي التراخيص" },
-      { num: AREAS.length, lbl: "المناطق" },
-      { num: active.toLocaleString("en-US"), lbl: "تراخيص قائمة" },
+      { num: LICENSES.length.toLocaleString("en-US"), lbl: "إجمالي السجلات" },
+      { num: licenses.toLocaleString("en-US"), lbl: "تراخيص" },
+      { num: factories.toLocaleString("en-US"), lbl: "مصانع" },
+      { num: active.toLocaleString("en-US"), lbl: "قائمة" },
       { num: fmtNum(Math.round(totalSize)), lbl: "إجمالي المساحة (م²)" },
     ];
     document.getElementById("stats").innerHTML = cards
@@ -93,6 +96,7 @@
   function matches(l) {
     if (state.area && l.area !== state.area) return false;
     if (state.status && l.status !== state.status) return false;
+    if (state.type && l.type !== state.type) return false;
     if (!state.search) return true;
     const q = state.search.toLowerCase();
     const hay = [
@@ -129,6 +133,7 @@
       const badge = tc ? `<span class="badge">${tc}</span>` : `<span class="badge zero">0</span>`;
       return `
       <tr class="main-row" data-i="${i}">
+        <td><span class="rec-type ${esc(l.type || "")}">${esc(l.type || "—")}</span></td>
         <td>${esc(l.license)}</td>
         <td>${esc(l.client)}</td>
         <td>${clientPlotsOf(l)}</td>
@@ -176,12 +181,15 @@
 
     const row = document.createElement("tr");
     row.className = "detail-row";
-    row.innerHTML = `<td colspan="12"><div class="detail-inner">
+    row.innerHTML = `<td colspan="13"><div class="detail-inner">
         <div class="detail-grid">
           <div><div class="k">الاسم الحالي للترخيص</div><div class="v">${esc(l.name)}</div></div>
           <div><div class="k">الاسم التجاري</div><div class="v">${esc(l.trade)}</div></div>
           <div><div class="k">عدد قسائم العميل</div><div class="v">${clientPlotsOf(l)}</div></div>
-          <div><div class="k">حالة الترخيص</div><div class="v"><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></div></div>
+          <div><div class="k">النوع</div><div class="v"><span class="rec-type ${esc(l.type || "")}">${esc(l.type || "—")}</span></div></div>
+          <div><div class="k">الحالة</div><div class="v"><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></div></div>
+          ${l.contractType ? `<div><div class="k">طبيعة العقد</div><div class="v">${esc(l.contractType)}</div></div>` : ""}
+          ${l.kind ? `<div><div class="k">خدمي/صناعي</div><div class="v">${esc(l.kind)}</div></div>` : ""}
           <div><div class="k">تاريخ البداية</div><div class="v">${esc(l.start)}</div></div>
           <div><div class="k">تاريخ النهاية</div><div class="v">${esc(l.end)}</div></div>
           <div><div class="k">تاريخ التسليم</div><div class="v">${esc(l.delivery)}</div></div>
@@ -209,6 +217,15 @@
       o.value = st; o.textContent = st;
       statusSel.appendChild(o);
     });
+    const typeSel = document.getElementById("typeFilter");
+    if (typeSel) {
+      [...new Set(LICENSES.map((l) => l.type).filter(Boolean))].forEach((tp) => {
+        const o = document.createElement("option");
+        o.value = tp; o.textContent = tp;
+        typeSel.appendChild(o);
+      });
+      typeSel.addEventListener("change", (e) => { state.type = e.target.value; render(); });
+    }
 
     let t;
     document.getElementById("search").addEventListener("input", (e) => {
@@ -225,9 +242,10 @@
     });
     statusSel.addEventListener("change", (e) => { state.status = e.target.value; render(); });
     document.getElementById("clearBtn").addEventListener("click", () => {
-      state.search = ""; state.area = ""; state.status = "";
+      state.search = ""; state.area = ""; state.status = ""; state.type = "";
       document.getElementById("search").value = "";
       areaSel.value = ""; statusSel.value = "";
+      if (typeSel) typeSel.value = "";
       if (map) map.flyTo([29.05, 48.14], 11, { duration: 0.6 });
       render();
     });
@@ -257,14 +275,14 @@
     const rtl = (ws, widths) => { ws["!views"] = [{ RTL: true }]; if (widths) ws["!cols"] = widths.map((w) => ({ wch: w })); return ws; };
 
     // ورقة 1: التراخيص
-    const licHead = ["رقم الترخيص", "رقم العميل", "عدد قسائم العميل", "المنطقة", "عدد القسائم", "إجمالي المساحة (م²)",
-      "الاسم الحالي للترخيص", "الاسم التجاري", "النشاط", "حالة الترخيص",
+    const licHead = ["النوع", "رقم الترخيص", "رقم العميل", "عدد قسائم العميل", "المنطقة", "عدد القسائم", "إجمالي المساحة (م²)",
+      "الاسم", "الاسم التجاري", "النشاط", "الحالة", "طبيعة العقد", "خدمي/صناعي",
       "تاريخ البداية", "تاريخ النهاية", "تاريخ التسليم", "عدد حركات التنازل"];
-    const licRows = LICENSES.map((l) => [l.license, l.client, clientPlotsOf(l), l.area, l.plots.length, l.totalSize,
-      l.name, l.trade, l.activity, l.status, l.start, l.end, l.delivery, l.transfers.length]);
+    const licRows = LICENSES.map((l) => [l.type, l.license, l.client, clientPlotsOf(l), l.area, l.plots.length, l.totalSize,
+      l.name, l.trade, l.activity, l.status, l.contractType, l.kind, l.start, l.end, l.delivery, l.transfers.length]);
     XLSX.utils.book_append_sheet(wb,
-      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 15, 22, 10, 16, 30, 30, 50, 12, 13, 13, 13, 12]),
-      "التراخيص");
+      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [8, 12, 11, 15, 22, 10, 16, 30, 30, 50, 12, 12, 12, 13, 13, 13, 12]),
+      "السجلات");
 
     // ورقة 2: القسائم
     const plotHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "القسيمة", "المساحة (م²)", "تاريخ التسليم"];
@@ -291,6 +309,7 @@
     const shown = document.querySelectorAll("#licBody tr.main-row").length;
     const today = new Date().toLocaleDateString("ar-KW-u-nu-latn");
     const filters = [];
+    if (state.type) filters.push(`النوع: ${state.type}`);
     if (state.area) filters.push(`المنطقة: ${state.area}`);
     if (state.status) filters.push(`الحالة: ${state.status}`);
     if (state.search) filters.push(`بحث: ${state.search}`);
