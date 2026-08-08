@@ -124,6 +124,14 @@ tbody tr.main-row.active { background: #223347; }
 
 .empty-state { padding: 30px; text-align: center; color: var(--muted); }
 
+/* قسم موافقات مجلس الإدارة */
+.approvals-section { margin-top: 26px; }
+.approvals-wrap { max-height: 60vh; }
+#approvalsTable { font-size: .85rem; }
+#approvalsTable td { white-space: normal; vertical-align: top; }
+#approvalsTable .loc-cell { min-width: 200px; color: var(--muted); }
+#approvalsTable .dec-cell { min-width: 260px; }
+
 /* صفحة الافتتاح (Splash) */
 #splash {
   position: fixed; inset: 0; z-index: 100000;
@@ -205,7 +213,7 @@ tbody tr.main-row.active { background: #223347; }
 @media print {
   @page { size: A4 landscape; margin: 12mm 10mm; }
   html, body { background: #fff !important; color: #000 !important; }
-  .site-header, .stats, .map-section, .controls, .plans-section,
+  .site-header, .stats, .map-section, .controls, .plans-section, .approvals-section,
   .site-footer, #lightbox, #splash { display: none !important; }
   main { max-width: none; margin: 0; padding: 0; }
 

@@ -314,13 +314,12 @@
       rtl(XLSX.utils.aoa_to_sheet([trHead, ...trRows]), [12, 30, 13, 12, 34, 34]),
       "حركات التنازل");
 
-    // ورقة 4: موافقات مجلس الإدارة
-    const bHead = ["رقم الترخيص", "رقم العميل", "الاسم", "المحضر", "التاريخ", "الموضوع", "مستغل القسيمة", "الموقع", "القرار"];
-    const bRows = [];
-    LICENSES.forEach((l) => (l.board || []).forEach((bd) =>
-      bRows.push([l.license, l.client, l.name, bd.minutes, bd.date, bd.subject, bd.occupant, bd.location, bd.decision])));
+    // ورقة 4: موافقات مجلس الإدارة (كل الموافقات، بدون سحب/إلغاء)
+    const bHead = ["المحضر", "التاريخ", "الموضوع", "مستغل القسيمة", "المنطقة", "الموقع", "القرار"];
+    const src = (typeof APPROVALS !== "undefined") ? APPROVALS : [];
+    const bRows = src.map((a) => [a.minutes, a.date, a.subject, a.occupant, a.area, a.location, a.decision]);
     XLSX.utils.book_append_sheet(wb,
-      rtl(XLSX.utils.aoa_to_sheet([bHead, ...bRows]), [12, 11, 28, 10, 12, 26, 28, 34, 46]),
+      rtl(XLSX.utils.aoa_to_sheet([bHead, ...bRows]), [10, 12, 26, 28, 22, 34, 48]),
       "موافقات مجلس الإدارة");
 
     XLSX.writeFile(wb, "تراخيص_الشعيبة.xlsx");
@@ -353,6 +352,21 @@
       el.style.color = "var(--muted)";
       el.textContent = msg + " يمكنك استخدام البحث والجدول بالأسفل.";
     }
+  }
+
+  // ---------- موافقات مجلس الإدارة (كل الموافقات) ----------
+  function renderApprovals() {
+    const body = document.getElementById("approvalsBody");
+    if (!body || typeof APPROVALS === "undefined") return;
+    body.innerHTML = APPROVALS.map((a) => `
+      <tr>
+        <td>${esc(a.minutes)}</td>
+        <td>${esc(a.date)}</td>
+        <td>${esc(a.subject)}</td>
+        <td>${esc(a.occupant)}</td>
+        <td class="loc-cell">${esc(a.location)}</td>
+        <td class="dec-cell">${esc(a.decision)}</td>
+      </tr>`).join("");
   }
 
   // ---------- المخططات + العارض المكبّر ----------
@@ -471,6 +485,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     initSplash();
     renderStats();
+    renderApprovals();
     renderPlans();
     initLightbox();
     try {
