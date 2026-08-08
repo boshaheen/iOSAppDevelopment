@@ -354,11 +354,19 @@
     }
   }
 
-  // ---------- موافقات مجلس الإدارة (كل الموافقات) ----------
+  // ---------- موافقات مجلس الإدارة (كل الموافقات) + فلترة ----------
+  const apprState = { search: "", area: "" };
   function renderApprovals() {
     const body = document.getElementById("approvalsBody");
     if (!body || typeof APPROVALS === "undefined") return;
-    body.innerHTML = APPROVALS.map((a) => `
+    const q = apprState.search.toLowerCase();
+    const rows = APPROVALS.filter((a) => {
+      if (apprState.area && a.area !== apprState.area) return false;
+      if (!q) return true;
+      return [a.minutes, a.date, a.subject, a.occupant, a.location, a.decision]
+        .filter(Boolean).join(" ").toLowerCase().includes(q);
+    });
+    body.innerHTML = rows.map((a) => `
       <tr>
         <td>${esc(a.minutes)}</td>
         <td>${esc(a.date)}</td>
@@ -366,7 +374,33 @@
         <td>${esc(a.occupant)}</td>
         <td class="loc-cell">${esc(a.location)}</td>
         <td class="dec-cell">${esc(a.decision)}</td>
-      </tr>`).join("");
+      </tr>`).join("") ||
+      `<tr><td colspan="6" class="empty-state">لا توجد موافقات مطابقة.</td></tr>`;
+    const cnt = document.getElementById("apprCount");
+    if (cnt) cnt.textContent = `عدد الموافقات: ${rows.length.toLocaleString("en-US")}`;
+  }
+  function initApprovalsFilter() {
+    if (typeof APPROVALS === "undefined") return;
+    const areaSel = document.getElementById("apprArea");
+    if (areaSel) {
+      [...new Set(APPROVALS.map((a) => a.area).filter(Boolean))].forEach((ar) => {
+        const o = document.createElement("option");
+        o.value = ar; o.textContent = ar;
+        areaSel.appendChild(o);
+      });
+      areaSel.addEventListener("change", (e) => { apprState.area = e.target.value; renderApprovals(); });
+    }
+    const sInp = document.getElementById("apprSearch");
+    if (sInp) {
+      let t;
+      sInp.addEventListener("input", (e) => { clearTimeout(t); t = setTimeout(() => { apprState.search = e.target.value.trim(); renderApprovals(); }, 160); });
+    }
+    const clr = document.getElementById("apprClear");
+    if (clr) clr.addEventListener("click", () => {
+      apprState.search = ""; apprState.area = "";
+      if (sInp) sInp.value = ""; if (areaSel) areaSel.value = "";
+      renderApprovals();
+    });
   }
 
   // ---------- المخططات + العارض المكبّر ----------
@@ -486,6 +520,7 @@
     initSplash();
     renderStats();
     renderApprovals();
+    initApprovalsFilter();
     renderPlans();
     initLightbox();
     try {

@@ -90,6 +90,14 @@ def main():
     <section class="approvals-section">
       <h2 class="plans-title">📋 موافقات مجلس الإدارة — الشعيبة</h2>
       <p class="plans-hint">جميع الموافقات الصادرة عن مجلس الإدارة (بدون قرارات السحب أو الإلغاء).</p>
+      <div class="controls">
+        <div class="control search-box">
+          <input type="text" id="apprSearch" placeholder="🔍 ابحث في الموافقات (الموضوع، المستغل، القرار، رقم المحضر)..." />
+        </div>
+        <div class="control"><select id="apprArea"><option value="">كل المناطق</option></select></div>
+        <div class="control"><button id="apprClear" class="clear-btn" type="button">مسح ✕</button></div>
+        <div class="result-count" id="apprCount"></div>
+      </div>
       <div class="table-section">
         <div class="table-wrap approvals-wrap">
           <table id="approvalsTable">
