@@ -119,6 +119,7 @@ tbody tr.main-row.active { background: #223347; }
 .hist-table { width: 100%; font-size: .85rem; margin-top: 4px; }
 .hist-table th, .hist-table td { padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: normal; text-align: right; }
 .hist-table th { color: var(--muted); }
+.board-note { margin-top: 5px; font-size: .8rem; color: #f0c05a; background: rgba(230,168,53,.12); border: 1px solid rgba(230,168,53,.4); border-radius: 6px; padding: 3px 8px; }
 .plots-list { margin: 0; padding: 0; list-style: none; }
 .plots-list li { padding: 3px 0; border-bottom: 1px dashed var(--line); }
 

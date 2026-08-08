@@ -186,7 +186,7 @@
       ? `<table class="hist-table">
            <thead><tr><th>المحضر</th><th>التاريخ</th><th>الموضوع</th><th>مستغل القسيمة</th><th>الموقع</th><th>القرار</th></tr></thead>
            <tbody>${l.board.map((bd) =>
-             `<tr><td>${esc(bd.minutes)}</td><td>${esc(bd.date)}</td><td>${esc(bd.subject)}</td><td>${esc(bd.occupant)}</td><td>${esc(bd.location)}</td><td>${esc(bd.decision)}</td></tr>`).join("")}</tbody>
+             `<tr><td>${esc(bd.minutes)}</td><td>${esc(bd.date)}</td><td>${esc(bd.subject)}</td><td>${esc(bd.occupant)}</td><td>${esc(bd.location)}</td><td>${esc(bd.decision)}${bd.note ? `<div class="board-note">📝 ${esc(bd.note)}</div>` : ""}</td></tr>`).join("")}</tbody>
          </table>`
       : `<p style="color:var(--muted);margin:0">لا توجد موافقات مجلس إدارة مرتبطة بهذا السجل.</p>`;
 
@@ -315,12 +315,12 @@
       "حركات التنازل");
 
     // ورقة 4: موافقات مجلس الإدارة (المرتبطة بالسجلات، بدون سحب/إلغاء)
-    const bHead = ["رقم الترخيص", "رقم العميل", "الاسم التجاري", "المحضر", "التاريخ", "الموضوع", "مستغل القسيمة", "الموقع", "القرار"];
+    const bHead = ["رقم الترخيص", "رقم العميل", "الاسم التجاري", "المحضر", "التاريخ", "الموضوع", "مستغل القسيمة", "الموقع", "القرار", "ملاحظة"];
     const bRows = [];
     LICENSES.forEach((l) => (l.board || []).forEach((bd) =>
-      bRows.push([l.license, l.client, l.trade || l.name, bd.minutes, bd.date, bd.subject, bd.occupant, bd.location, bd.decision])));
+      bRows.push([l.license, l.client, l.trade || l.name, bd.minutes, bd.date, bd.subject, bd.occupant, bd.location, bd.decision, bd.note || ""])));
     XLSX.utils.book_append_sheet(wb,
-      rtl(XLSX.utils.aoa_to_sheet([bHead, ...bRows]), [12, 11, 28, 10, 12, 24, 28, 32, 46]),
+      rtl(XLSX.utils.aoa_to_sheet([bHead, ...bRows]), [12, 11, 28, 10, 12, 24, 28, 32, 46, 30]),
       "موافقات مجلس الإدارة");
 
     XLSX.writeFile(wb, "تراخيص_الشعيبة.xlsx");
