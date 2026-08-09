@@ -187,6 +187,7 @@
         <td><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></td>
         <td>${esc(l.end)}</td>
         <td>${esc(l.delivery)}</td>
+        <td>${esc(l.permanentDate)}</td>
         <td>${badge}</td>
         <td>${(l.board && l.board.length) ? `<span class="badge board">${l.board.length}</span>` : `<span class="badge zero">—</span>`}</td>
       </tr>`;
@@ -232,7 +233,7 @@
 
     const row = document.createElement("tr");
     row.className = "detail-row";
-    row.innerHTML = `<td colspan="13"><div class="detail-inner">
+    row.innerHTML = `<td colspan="14"><div class="detail-inner">
         <div class="detail-grid">
           <div><div class="k">الاسم الحالي للترخيص</div><div class="v">${esc(l.name)}</div></div>
           <div><div class="k">الاسم التجاري</div><div class="v">${esc(l.trade)}</div></div>
@@ -243,6 +244,7 @@
           <div><div class="k">تاريخ البداية</div><div class="v">${esc(l.start)}</div></div>
           <div><div class="k">تاريخ النهاية</div><div class="v">${esc(l.end)}</div></div>
           <div><div class="k">تاريخ التسليم</div><div class="v">${esc(l.delivery)}</div></div>
+          <div><div class="k">تاريخ صدور الدائم</div><div class="v">${esc(l.permanentDate)}</div></div>
           <div class="activity"><div class="k">النشاط</div><div class="v">${esc(l.activity)}</div></div>
         </div>
         <h4>القسائم (${l.plots.length})</h4>
@@ -330,11 +332,11 @@
     const boardText = (l) => (l.board || []).map((b) => `${b.minutes} (${b.date}): ${b.decision}`).join(" | ");
     const licHead = ["رقم الترخيص", "رقم العميل", "عدد قسائم العميل", "المنطقة", "عدد القسائم", "إجمالي المساحة (م²)",
       "الاسم", "الاسم التجاري", "النشاط", "الحالة",
-      "تاريخ البداية", "تاريخ النهاية", "تاريخ التسليم", "عدد حركات التنازل", "موافقة مجلس الإدارة"];
+      "تاريخ البداية", "تاريخ النهاية", "تاريخ التسليم", "تاريخ صدور الدائم", "عدد حركات التنازل", "موافقة مجلس الإدارة"];
     const licRows = LICENSES.map((l) => [l.license, l.client, clientPlotsOf(l), l.area, l.plots.length, l.totalSize,
-      l.name, l.trade, l.activity, l.status, l.start, l.end, l.delivery, l.transfers.length, boardText(l)]);
+      l.name, l.trade, l.activity, l.status, l.start, l.end, l.delivery, l.permanentDate, l.transfers.length, boardText(l)]);
     XLSX.utils.book_append_sheet(wb,
-      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 15, 22, 10, 16, 30, 30, 50, 12, 13, 13, 13, 12, 50]),
+      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 15, 22, 10, 16, 30, 30, 50, 12, 13, 13, 13, 13, 12, 50]),
       "السجلات");
 
     // ورقة 2: القسائم
