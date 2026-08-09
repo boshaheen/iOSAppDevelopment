@@ -50,9 +50,9 @@
 
   function updateHeader(name) {
     const h1 = document.querySelector(".site-header h1");
-    if (h1) h1.textContent = `🏭 مصانع وتراخيص ${name}`;
+    if (h1) h1.textContent = `🏭 تراخيص ${name}`;
     const sub = document.querySelector(".site-header .subtitle");
-    if (sub) sub.textContent = `خريطة تفاعلية لمصانع وتراخيص ${name} — مع حركات التنازل`;
+    if (sub) sub.textContent = `خريطة تفاعلية لتراخيص ${name} — مع حركات التنازل`;
   }
 
   const plotsLabel = (lic) => {
@@ -66,13 +66,11 @@
   function renderStats() {
     const totalSize = LICENSES.reduce((s, l) => s + (l.totalSize || 0), 0);
     const active = LICENSES.filter((l) => l.status === "قائم").length;
-    const factories = LICENSES.filter((l) => l.type === "مصنع").length;
-    const licenses = LICENSES.filter((l) => l.type === "ترخيص").length;
+    const mortgaged = LICENSES.filter((l) => l.status && l.status.includes("مرهون")).length;
     const cards = [
-      { num: LICENSES.length.toLocaleString("en-US"), lbl: "إجمالي السجلات" },
-      { num: licenses.toLocaleString("en-US"), lbl: "تراخيص" },
-      { num: factories.toLocaleString("en-US"), lbl: "مصانع" },
+      { num: LICENSES.length.toLocaleString("en-US"), lbl: "إجمالي التراخيص" },
       { num: active.toLocaleString("en-US"), lbl: "قائمة" },
+      { num: mortgaged.toLocaleString("en-US"), lbl: "مرهونة" },
       { num: fmtNum(Math.round(totalSize)), lbl: "إجمالي المساحة (م²)" },
     ];
     document.getElementById("stats").innerHTML = cards
@@ -140,7 +138,6 @@
   function matches(l) {
     if (state.area && l.area !== state.area) return false;
     if (state.status && l.status !== state.status) return false;
-    if (state.type && l.type !== state.type) return false;
     if (!state.search) return true;
     const q = state.search.toLowerCase();
     const hay = [
@@ -179,7 +176,6 @@
       const badge = tc ? `<span class="badge">${tc}</span>` : `<span class="badge zero">0</span>`;
       return `
       <tr class="main-row" data-i="${i}">
-        <td><span class="rec-type ${esc(l.type || "")}">${esc(l.type || "—")}</span></td>
         <td>${esc(l.license)}</td>
         <td>${esc(l.client)}</td>
         <td>${clientPlotsOf(l)}</td>
@@ -236,12 +232,11 @@
 
     const row = document.createElement("tr");
     row.className = "detail-row";
-    row.innerHTML = `<td colspan="14"><div class="detail-inner">
+    row.innerHTML = `<td colspan="13"><div class="detail-inner">
         <div class="detail-grid">
           <div><div class="k">الاسم الحالي للترخيص</div><div class="v">${esc(l.name)}</div></div>
           <div><div class="k">الاسم التجاري</div><div class="v">${esc(l.trade)}</div></div>
           <div><div class="k">عدد قسائم العميل</div><div class="v">${clientPlotsOf(l)}</div></div>
-          <div><div class="k">النوع</div><div class="v"><span class="rec-type ${esc(l.type || "")}">${esc(l.type || "—")}</span></div></div>
           <div><div class="k">الحالة</div><div class="v"><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></div></div>
           ${l.contractType ? `<div><div class="k">طبيعة العقد</div><div class="v">${esc(l.contractType)}</div></div>` : ""}
           ${l.kind ? `<div><div class="k">خدمي/صناعي</div><div class="v">${esc(l.kind)}</div></div>` : ""}
@@ -273,19 +268,12 @@
       statusSel.innerHTML = `<option value="">كل الحالات</option>` +
         [...new Set(LICENSES.map((l) => l.status).filter(Boolean))].map((st) => `<option value="${esc(st)}">${esc(st)}</option>`).join("");
     }
-    const typeSel = document.getElementById("typeFilter");
-    if (typeSel) {
-      typeSel.innerHTML = `<option value="">كل الأنواع</option>` +
-        [...new Set(LICENSES.map((l) => l.type).filter(Boolean))].map((tp) => `<option value="${esc(tp)}">${esc(tp)}</option>`).join("");
-    }
   }
 
   // ربط المستمعات مرة واحدة
   function bindControls() {
     const areaSel = document.getElementById("areaFilter");
     const statusSel = document.getElementById("statusFilter");
-    const typeSel = document.getElementById("typeFilter");
-    if (typeSel) typeSel.addEventListener("change", (e) => { state.type = e.target.value; render(); });
 
     let t;
     document.getElementById("search").addEventListener("input", (e) => {
@@ -302,10 +290,9 @@
     });
     if (statusSel) statusSel.addEventListener("change", (e) => { state.status = e.target.value; render(); });
     document.getElementById("clearBtn").addEventListener("click", () => {
-      state.search = ""; state.area = ""; state.status = ""; state.type = "";
+      state.search = ""; state.area = ""; state.status = "";
       document.getElementById("search").value = "";
       if (areaSel) areaSel.value = ""; if (statusSel) statusSel.value = "";
-      if (typeSel) typeSel.value = "";
       if (map && AREAS.length === 1) map.flyTo([AREAS[0].lat, AREAS[0].lng], 12, { duration: 0.6 });
       render();
     });
@@ -341,13 +328,13 @@
 
     // ورقة 1: التراخيص
     const boardText = (l) => (l.board || []).map((b) => `${b.minutes} (${b.date}): ${b.decision}`).join(" | ");
-    const licHead = ["النوع", "رقم الترخيص", "رقم العميل", "عدد قسائم العميل", "المنطقة", "عدد القسائم", "إجمالي المساحة (م²)",
-      "الاسم", "الاسم التجاري", "النشاط", "الحالة", "طبيعة العقد", "خدمي/صناعي",
+    const licHead = ["رقم الترخيص", "رقم العميل", "عدد قسائم العميل", "المنطقة", "عدد القسائم", "إجمالي المساحة (م²)",
+      "الاسم", "الاسم التجاري", "النشاط", "الحالة",
       "تاريخ البداية", "تاريخ النهاية", "تاريخ التسليم", "عدد حركات التنازل", "موافقة مجلس الإدارة"];
-    const licRows = LICENSES.map((l) => [l.type, l.license, l.client, clientPlotsOf(l), l.area, l.plots.length, l.totalSize,
-      l.name, l.trade, l.activity, l.status, l.contractType, l.kind, l.start, l.end, l.delivery, l.transfers.length, boardText(l)]);
+    const licRows = LICENSES.map((l) => [l.license, l.client, clientPlotsOf(l), l.area, l.plots.length, l.totalSize,
+      l.name, l.trade, l.activity, l.status, l.start, l.end, l.delivery, l.transfers.length, boardText(l)]);
     XLSX.utils.book_append_sheet(wb,
-      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [8, 12, 11, 15, 22, 10, 16, 30, 30, 50, 12, 12, 12, 13, 13, 13, 12, 50]),
+      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 15, 22, 10, 16, 30, 30, 50, 12, 13, 13, 13, 12, 50]),
       "السجلات");
 
     // ورقة 2: القسائم
@@ -384,7 +371,6 @@
     const shown = document.querySelectorAll("#licBody tr.main-row").length;
     const today = new Date().toLocaleDateString("ar-KW-u-nu-latn");
     const filters = [];
-    if (state.type) filters.push(`النوع: ${state.type}`);
     if (state.area) filters.push(`المنطقة: ${state.area}`);
     if (state.status) filters.push(`الحالة: ${state.status}`);
     if (state.search) filters.push(`بحث: ${state.search}`);

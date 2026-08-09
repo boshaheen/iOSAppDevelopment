@@ -62,7 +62,6 @@ def main():
       <div class="control search-box">
         <input type="text" id="search" placeholder="🔍 ابحث برقم الترخيص، الاسم التجاري، المتنازل/المتنازل إليه، النشاط..." />
       </div>
-      <div class="control"><select id="typeFilter"><option value="">كل الأنواع</option></select></div>
       <div class="control"><select id="areaFilter"><option value="">كل المناطق</option></select></div>
       <div class="control"><select id="statusFilter"><option value="">كل الحالات</option></select></div>
       <div class="control"><button id="clearBtn" class="clear-btn" type="button">مسح ✕</button></div>
@@ -76,7 +75,6 @@ def main():
         <table id="licTable">
           <thead>
             <tr>
-              <th data-key="type">النوع</th>
               <th data-key="license">رقم الترخيص</th>
               <th data-key="client">رقم العميل</th>
               <th data-key="clientPlots">قسائم العميل</th>
