@@ -248,6 +248,7 @@
           <div><div class="k">تاريخ النهاية</div><div class="v">${esc(l.end)}</div></div>
           <div><div class="k">تاريخ التسليم</div><div class="v">${esc(l.delivery)}</div></div>
           <div><div class="k">تاريخ صدور الدائم</div><div class="v">${(l.permanentDate && l.permanentDate.length) ? l.permanentDate.map(esc).join("<br>") : "—"}</div></div>
+          ${l.purpose ? `<div><div class="k">غرض التخصيص</div><div class="v">${esc(l.purpose)}</div></div>` : ""}
           <div class="activity"><div class="k">النشاط</div><div class="v">${esc(l.activity)}</div></div>
         </div>
         <h4>القسائم (${l.plots.length})</h4>
