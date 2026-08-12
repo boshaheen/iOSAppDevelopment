@@ -43,7 +43,7 @@ def main():
     <div class="regions-head">
       <img id="regLogo" class="reg-logo" alt="الهيئة العامة للصناعة" />
       <h1>المناطق الصناعية في دولة الكويت</h1>
-      <p>اختر المنطقة لعرض تقريرها — المتاح حالياً: <b>الشعيبة الصناعية</b></p>
+      <p>اختر المنطقة لعرض تقريرها</p>
     </div>
     <div id="regionsMap"></div>
     <div class="region-cards" id="regionCards"></div>

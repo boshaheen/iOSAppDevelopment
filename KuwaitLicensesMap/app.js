@@ -52,7 +52,7 @@
     const h1 = document.querySelector(".site-header h1");
     if (h1) h1.textContent = `🏭 تراخيص ${name}`;
     const sub = document.querySelector(".site-header .subtitle");
-    if (sub) sub.textContent = `خريطة تفاعلية لتراخيص ${name} — مع حركات التنازل`;
+    if (sub) sub.textContent = `خريطة تفاعلية لتراخيص ${name}`;
   }
 
   const plotsLabel = (lic) => {
