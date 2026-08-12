@@ -336,12 +336,12 @@
     // ورقة 1: التراخيص
     const boardText = (l) => (l.board || []).map((b) => `${b.minutes} (${b.date}): ${b.decision}`).join(" | ");
     const licHead = ["رقم الترخيص", "رقم العميل", "عدد قسائم العميل", "المنطقة", "عدد القسائم", "إجمالي المساحة (م²)",
-      "الاسم", "الاسم التجاري", "النشاط", "الحالة",
+      "الاسم", "الاسم التجاري", "النشاط", "غرض التخصيص", "الحالة",
       "تاريخ البداية", "تاريخ النهاية", "تاريخ التسليم", "تاريخ صدور الدائم", "عدد حركات التنازل", "موافقة مجلس الإدارة"];
     const licRows = LICENSES.map((l) => [l.license, l.client, clientPlotsOf(l), l.area, l.plots.length, l.totalSize,
-      l.name, l.trade, l.activity, l.status, l.start, l.end, l.delivery, (l.permanentDate || []).join(" / "), l.transfers.length, boardText(l)]);
+      l.name, l.trade, l.activity, l.purpose, l.status, l.start, l.end, l.delivery, (l.permanentDate || []).join(" / "), l.transfers.length, boardText(l)]);
     XLSX.utils.book_append_sheet(wb,
-      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 15, 22, 10, 16, 30, 30, 50, 12, 13, 13, 13, 13, 12, 50]),
+      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 15, 22, 10, 16, 30, 30, 50, 14, 12, 13, 13, 13, 13, 12, 50]),
       "السجلات");
 
     // ورقة 2: القسائم
