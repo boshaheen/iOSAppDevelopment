@@ -272,7 +272,7 @@
     if (statusSel) {
       statusSel.innerHTML = `<option value="">كل الحالات</option>` +
         [...new Set(LICENSES.map((l) => l.status).filter(Boolean))].map((st) => `<option value="${esc(st)}">${esc(st)}</option>`).join("") +
-        `<option value="__transfer__">— لها تنازل —</option>`;
+        `<option value="__transfer__">— تنازلات —</option>`;
     }
   }
 
@@ -378,7 +378,7 @@
     const today = new Date().toLocaleDateString("ar-KW-u-nu-latn");
     const filters = [];
     if (state.area) filters.push(`المنطقة: ${state.area}`);
-    if (state.status) filters.push(state.status === "__transfer__" ? "لها تنازل" : `الحالة: ${state.status}`);
+    if (state.status) filters.push(state.status === "__transfer__" ? "تنازلات" : `الحالة: ${state.status}`);
     if (state.search) filters.push(`بحث: ${state.search}`);
     const fTxt = filters.length ? filters.join(" — ") : "بدون تصفية (كل السجلات)";
     el.innerHTML =
