@@ -137,7 +137,10 @@
   // ---------- الفلترة + الترتيب ----------
   function matches(l) {
     if (state.area && l.area !== state.area) return false;
-    if (state.status && l.status !== state.status) return false;
+    if (state.status) {
+      if (state.status === "__transfer__") { if (!l.transfers || !l.transfers.length) return false; }
+      else if (l.status !== state.status) return false;
+    }
     if (!state.search) return true;
     const q = state.search.toLowerCase();
     const hay = [
@@ -268,7 +271,8 @@
     const statusSel = document.getElementById("statusFilter");
     if (statusSel) {
       statusSel.innerHTML = `<option value="">كل الحالات</option>` +
-        [...new Set(LICENSES.map((l) => l.status).filter(Boolean))].map((st) => `<option value="${esc(st)}">${esc(st)}</option>`).join("");
+        [...new Set(LICENSES.map((l) => l.status).filter(Boolean))].map((st) => `<option value="${esc(st)}">${esc(st)}</option>`).join("") +
+        `<option value="__transfer__">— لها تنازل —</option>`;
     }
   }
 
@@ -374,7 +378,7 @@
     const today = new Date().toLocaleDateString("ar-KW-u-nu-latn");
     const filters = [];
     if (state.area) filters.push(`المنطقة: ${state.area}`);
-    if (state.status) filters.push(`الحالة: ${state.status}`);
+    if (state.status) filters.push(state.status === "__transfer__" ? "لها تنازل" : `الحالة: ${state.status}`);
     if (state.search) filters.push(`بحث: ${state.search}`);
     const fTxt = filters.length ? filters.join(" — ") : "بدون تصفية (كل السجلات)";
     el.innerHTML =
