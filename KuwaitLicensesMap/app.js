@@ -55,11 +55,14 @@
     if (sub) sub.textContent = `خريطة تفاعلية لتراخيص ${name}`;
   }
 
-  const plotsLabel = (lic) => {
-    if (!lic.plots.length) return "—";
-    const p = lic.plots[0];
-    const first = `ق${p.block ?? "—"}/${p.plot ?? "—"}`;
-    return lic.plots.length > 1 ? `${first} (+${lic.plots.length - 1})` : first;
+  const blockLabel = (l) => {
+    const blocks = [...new Set(l.plots.map((p) => p.block).filter((b) => b != null && b !== ""))];
+    return blocks.length ? blocks.join("، ") : "—";
+  };
+  const plotLabel = (l) => {
+    if (!l.plots.length) return "—";
+    const first = l.plots[0].plot ?? "—";
+    return l.plots.length > 1 ? `${first} (+${l.plots.length - 1})` : `${first}`;
   };
 
   // ---------- الإحصائيات ----------
@@ -160,6 +163,7 @@
       k === "boardCount" ? (l.board ? l.board.length : 0) :
       k === "clientPlots" ? clientPlotsOf(l) :
       k === "size" ? (l.totalSize || 0) :
+      k === "block" ? (l.plots[0] ? l.plots[0].block : "") :
       k === "plot" ? (l.plots[0] ? l.plots[0].plot : "") : l[k];
     return rows.slice().sort((a, b) => {
       let va = val(a), vb = val(b);
@@ -183,7 +187,8 @@
         <td>${esc(l.client)}</td>
         <td>${clientPlotsOf(l)}</td>
         <td>${esc(l.area)}</td>
-        <td>${esc(plotsLabel(l))}</td>
+        <td>${esc(blockLabel(l))}</td>
+        <td>${esc(plotLabel(l))}</td>
         <td>${fmtNum(l.totalSize)}</td>
         <td class="name-cell">${esc(l.name)}</td>
         <td class="name-cell">${esc(l.trade)}</td>
@@ -236,7 +241,7 @@
 
     const row = document.createElement("tr");
     row.className = "detail-row";
-    row.innerHTML = `<td colspan="14"><div class="detail-inner">
+    row.innerHTML = `<td colspan="15"><div class="detail-inner">
         <div class="detail-grid">
           <div><div class="k">الاسم الحالي للترخيص</div><div class="v">${esc(l.name)}</div></div>
           <div><div class="k">الاسم التجاري</div><div class="v">${esc(l.trade)}</div></div>

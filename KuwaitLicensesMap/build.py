@@ -79,6 +79,7 @@ def main():
               <th data-key="client">رقم العميل</th>
               <th data-key="clientPlots">قسائم العميل</th>
               <th data-key="area">المنطقة</th>
+              <th data-key="block">القطعة</th>
               <th data-key="plot">القسيمة</th>
               <th data-key="size">المساحة (م²)</th>
               <th data-key="name">الاسم الحالي للترخيص</th>
