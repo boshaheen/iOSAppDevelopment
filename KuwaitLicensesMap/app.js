@@ -27,6 +27,10 @@
   }
   const clientPlotsOf = (l) => clientPlotCount[l.client || ("__lic_" + l.license)] ?? l.plots.length;
 
+  // أرقام العملاء لترخيص واحد (الأساسي + أي أرقام إضافية لنفس الشركة/العميل)
+  const clientNums = (l) =>
+    [l.client, ...(l.clientAlt || [])].filter((x) => x != null && x !== "");
+
   // ---------- تحميل المنطقة ----------
   function loadRegion(name) {
     const d = (typeof REGION_DATA !== "undefined") ? REGION_DATA[name] : null;
@@ -147,7 +151,7 @@
     if (!state.search) return true;
     const q = state.search.toLowerCase();
     const hay = [
-      l.license, l.client, l.name, l.trade, l.area, l.activity, l.status, l.delivery, ...(l.permanentDate || []),
+      l.license, ...clientNums(l), l.name, l.trade, l.area, l.activity, l.status, l.delivery, ...(l.permanentDate || []),
       ...l.plots.flatMap((p) => [p.block, p.plot]),
       ...l.transfers.flatMap((t) => [t.from, t.to, t.reqNo, t.date]),
       ...(l.board || []).flatMap((bd) => [bd.decision, bd.subject, bd.minutes, bd.occupant]),
@@ -184,7 +188,7 @@
       return `
       <tr class="main-row" data-i="${i}">
         <td>${esc(l.license)}</td>
-        <td>${esc(l.client)}</td>
+        <td>${clientNums(l).length ? clientNums(l).map(esc).join("<br>") : "—"}</td>
         <td>${clientPlotsOf(l)}</td>
         <td>${esc(l.area)}</td>
         <td>${esc(blockLabel(l))}</td>
@@ -245,6 +249,7 @@
         <div class="detail-grid">
           <div><div class="k">الاسم الحالي للترخيص</div><div class="v">${esc(l.name)}</div></div>
           <div><div class="k">الاسم التجاري</div><div class="v">${esc(l.trade)}</div></div>
+          ${clientNums(l).length > 1 ? `<div><div class="k">أرقام العملاء</div><div class="v">${clientNums(l).map(esc).join("، ")}</div></div>` : ""}
           <div><div class="k">عدد قسائم العميل</div><div class="v">${clientPlotsOf(l)}</div></div>
           <div><div class="k">الحالة</div><div class="v"><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></div></div>
           ${l.contractType ? `<div><div class="k">طبيعة العقد</div><div class="v">${esc(l.contractType)}</div></div>` : ""}
@@ -343,7 +348,7 @@
     const licHead = ["رقم الترخيص", "رقم العميل", "عدد قسائم العميل", "المنطقة", "عدد القسائم", "إجمالي المساحة (م²)",
       "الاسم", "الاسم التجاري", "النشاط", "غرض التخصيص", "الحالة",
       "تاريخ البداية", "تاريخ النهاية", "تاريخ التسليم", "تاريخ صدور الدائم", "عدد حركات التنازل", "موافقة مجلس الإدارة"];
-    const licRows = LICENSES.map((l) => [l.license, l.client, clientPlotsOf(l), l.area, l.plots.length, l.totalSize,
+    const licRows = LICENSES.map((l) => [l.license, clientNums(l).join(" / "), clientPlotsOf(l), l.area, l.plots.length, l.totalSize,
       l.name, l.trade, l.activity, l.purpose, l.status, l.start, l.end, l.delivery, (l.permanentDate || []).join(" / "), l.transfers.length, boardText(l)]);
     XLSX.utils.book_append_sheet(wb,
       rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 15, 22, 10, 16, 30, 30, 50, 14, 12, 13, 13, 13, 13, 12, 50]),
@@ -352,7 +357,7 @@
     // ورقة 2: القسائم
     const plotHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "القسيمة", "المساحة (م²)", "تاريخ التسليم"];
     const plotRows = [];
-    LICENSES.forEach((l) => l.plots.forEach((p) => plotRows.push([l.license, l.client, l.area, p.block, p.plot, p.size, p.delivery])));
+    LICENSES.forEach((l) => l.plots.forEach((p) => plotRows.push([l.license, clientNums(l).join(" / "), l.area, p.block, p.plot, p.size, p.delivery])));
     XLSX.utils.book_append_sheet(wb,
       rtl(XLSX.utils.aoa_to_sheet([plotHead, ...plotRows]), [12, 11, 22, 10, 12, 14, 13]),
       "القسائم");
