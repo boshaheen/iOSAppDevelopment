@@ -337,9 +337,12 @@
     });
   }
 
-  // ---------- تصدير Excel (كل البيانات) ----------
+  // ---------- تصدير Excel (حسب الفلتر المختار) ----------
   function exportExcel() {
     if (typeof XLSX === "undefined") { alert("تعذّر تحميل مكتبة Excel."); return; }
+    // نصدّر نفس السجلات الظاهرة حالياً (بعد تطبيق البحث/المنطقة/الحالة والترتيب)
+    const EXP = sortRows(LICENSES.filter(matches));
+    const isFiltered = !!(state.search || state.area || state.status);
     const wb = XLSX.utils.book_new();
     const rtl = (ws, widths) => { ws["!views"] = [{ RTL: true }]; if (widths) ws["!cols"] = widths.map((w) => ({ wch: w })); return ws; };
 
@@ -350,7 +353,7 @@
     const licHead = ["رقم الترخيص", "رقم العميل", "عدد قسائم العميل", "المنطقة", "القطعة", "رقم القسيمة", "عدد القسائم", "إجمالي المساحة (م²)",
       "الاسم", "الاسم التجاري", "النشاط", "غرض التخصيص", "الحالة",
       "تاريخ البداية", "تاريخ النهاية", "تاريخ التسليم", "تاريخ صدور الدائم", "عدد حركات التنازل", "موافقة مجلس الإدارة"];
-    const licRows = LICENSES.map((l) => [l.license, clientNums(l).join(" / "), clientPlotsOf(l), l.area, blocksStr(l), plotsStr(l), l.plots.length, l.totalSize,
+    const licRows = EXP.map((l) => [l.license, clientNums(l).join(" / "), clientPlotsOf(l), l.area, blocksStr(l), plotsStr(l), l.plots.length, l.totalSize,
       l.name, l.trade, l.activity, l.purpose, l.status, l.start, l.end, l.delivery, (l.permanentDate || []).join(" / "), l.transfers.length, boardText(l)]);
     XLSX.utils.book_append_sheet(wb,
       rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 15, 22, 12, 18, 10, 16, 30, 30, 50, 14, 12, 13, 13, 13, 13, 12, 50]),
@@ -359,7 +362,7 @@
     // ورقة 2: القسائم
     const plotHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "القسيمة", "المساحة (م²)", "تاريخ التسليم"];
     const plotRows = [];
-    LICENSES.forEach((l) => l.plots.forEach((p) => plotRows.push([l.license, clientNums(l).join(" / "), l.area, p.block, p.plot, p.size, p.delivery])));
+    EXP.forEach((l) => l.plots.forEach((p) => plotRows.push([l.license, clientNums(l).join(" / "), l.area, p.block, p.plot, p.size, p.delivery])));
     XLSX.utils.book_append_sheet(wb,
       rtl(XLSX.utils.aoa_to_sheet([plotHead, ...plotRows]), [12, 11, 22, 10, 12, 14, 13]),
       "القسائم");
@@ -367,7 +370,7 @@
     // ورقة 3: حركات التنازل
     const trHead = ["رقم الترخيص", "الاسم التجاري", "تاريخ الطلب", "رقم الطلب", "متنازل", "متنازل إليه"];
     const trRows = [];
-    LICENSES.forEach((l) => l.transfers.forEach((t) => trRows.push([l.license, l.trade, t.date, t.reqNo, t.from, t.to])));
+    EXP.forEach((l) => l.transfers.forEach((t) => trRows.push([l.license, l.trade, t.date, t.reqNo, t.from, t.to])));
     XLSX.utils.book_append_sheet(wb,
       rtl(XLSX.utils.aoa_to_sheet([trHead, ...trRows]), [12, 30, 13, 12, 34, 34]),
       "حركات التنازل");
@@ -375,13 +378,13 @@
     // ورقة 4: موافقات مجلس الإدارة (المرتبطة بالسجلات، بدون سحب/إلغاء)
     const bHead = ["رقم الترخيص", "رقم العميل", "الاسم التجاري", "المحضر", "التاريخ", "الموضوع", "مستغل القسيمة", "الموقع", "القرار", "ملاحظة"];
     const bRows = [];
-    LICENSES.forEach((l) => (l.board || []).forEach((bd) =>
+    EXP.forEach((l) => (l.board || []).forEach((bd) =>
       bRows.push([l.license, l.client, l.trade || l.name, bd.minutes, bd.date, bd.subject, bd.occupant, bd.location, bd.decision, bd.note || ""])));
     XLSX.utils.book_append_sheet(wb,
       rtl(XLSX.utils.aoa_to_sheet([bHead, ...bRows]), [12, 11, 28, 10, 12, 24, 28, 32, 46, 30]),
       "موافقات مجلس الإدارة");
 
-    XLSX.writeFile(wb, `تراخيص_${currentRegionName || "المنطقة"}.xlsx`);
+    XLSX.writeFile(wb, `تراخيص_${currentRegionName || "المنطقة"}${isFiltered ? "_مُصفّى" : ""}.xlsx`);
   }
 
   function buildPrintHeader() {
