@@ -353,22 +353,17 @@
     const wb = XLSX.utils.book_new();
     const rtl = (ws, widths) => { ws["!views"] = [{ RTL: true }]; if (widths) ws["!cols"] = widths.map((w) => ({ wch: w })); return ws; };
 
-    // ورقة 1: السجلات — صفٌّ مستقل لكل قسيمة (كل قسيمة بعنوانها ورقم عميلها، بدون دمج)
+    // ورقة 1: السجلات — صفٌّ واحد لكل ترخيص (لا يتكرّر رقم الترخيص)، مع عرض كل أرقام العملاء
     const boardText = (l) => (l.board || []).map((b) => `${b.minutes} (${b.date}): ${b.decision}`).join(" | ");
-    const licHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "رقم القسيمة", "مساحة القسيمة (م²)", "تاريخ التسليم",
+    const blocksStr = (l) => [...new Set(l.plots.map((p) => p.block).filter((b) => b != null && b !== ""))].join("، ");
+    const plotsStr = (l) => l.plots.map((p) => p.plot).filter((p) => p != null && p !== "").join("، ");
+    const licHead = ["رقم الترخيص", "أرقام العملاء", "المنطقة", "القطعة", "رقم القسيمة", "عدد القسائم", "إجمالي المساحة (م²)",
       "الاسم", "الاسم التجاري", "النشاط", "غرض التخصيص", "الحالة",
-      "تاريخ البداية", "تاريخ النهاية", "تاريخ صدور الدائم", "عدد حركات التنازل", "موافقة مجلس الإدارة"];
-    const licRows = [];
-    EXP.forEach((l) => {
-      const plots = l.plots && l.plots.length ? l.plots : [{}];
-      plots.forEach((p) => {
-        const cli = (p.client != null && p.client !== "") ? p.client : (l.client || "");
-        licRows.push([l.license, cli, l.area, p.block, p.plot, p.size, p.delivery,
-          l.name, l.trade, l.activity, l.purpose, l.status, l.start, l.end, (l.permanentDate || []).join(" / "), l.transfers.length, boardText(l)]);
-      });
-    });
+      "تاريخ البداية", "تاريخ النهاية", "تاريخ التسليم", "تاريخ صدور الدائم", "عدد حركات التنازل", "موافقة مجلس الإدارة"];
+    const licRows = EXP.map((l) => [l.license, clientNums(l).join(" / "), l.area, blocksStr(l), plotsStr(l), l.plots.length, l.totalSize,
+      l.name, l.trade, l.activity, l.purpose, l.status, l.start, l.end, l.delivery, (l.permanentDate || []).join(" / "), l.transfers.length, boardText(l)]);
     XLSX.utils.book_append_sheet(wb,
-      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 22, 10, 12, 15, 13, 30, 30, 50, 14, 12, 13, 13, 13, 12, 50]),
+      rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 16, 22, 12, 18, 10, 16, 30, 30, 50, 14, 12, 13, 13, 13, 13, 12, 50]),
       "السجلات");
 
     // ورقة 2: القسائم
