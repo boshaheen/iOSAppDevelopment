@@ -13,23 +13,29 @@
     String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-  // عدد القسائم المميّزة لكل عميل (تُحسب لكل منطقة عند تحميلها)
+  // عدد القسائم المميّزة لكل عميل (تُحسب لكل منطقة عند تحميلها) — رقم العميل على مستوى القسيمة
   let clientPlotCount = {};
   function computeClientPlots() {
     const groups = {};
     LICENSES.forEach((l) => {
-      const key = l.client || ("__lic_" + l.license);
-      (groups[key] = groups[key] || new Set());
-      l.plots.forEach((p) => groups[key].add(`${l.area}|${p.block}|${p.plot}`));
+      l.plots.forEach((p) => {
+        const key = (p.client != null && p.client !== "") ? p.client : (l.client || ("__lic_" + l.license));
+        (groups[key] = groups[key] || new Set());
+        groups[key].add(`${l.area}|${p.block}|${p.plot}`);
+      });
     });
     clientPlotCount = {};
     Object.keys(groups).forEach((k) => { clientPlotCount[k] = groups[k].size; });
   }
   const clientPlotsOf = (l) => clientPlotCount[l.client || ("__lic_" + l.license)] ?? l.plots.length;
 
-  // أرقام العملاء لترخيص واحد (الأساسي + أي أرقام إضافية لنفس الشركة/العميل)
-  const clientNums = (l) =>
-    [l.client, ...(l.clientAlt || [])].filter((x) => x != null && x !== "");
+  // أرقام العملاء لترخيص واحد: كل قسيمة لها رقم عميل، فنعرض الأرقام المميّزة لكل قسائم الترخيص
+  const clientNums = (l) => {
+    const set = [];
+    (l.plots || []).forEach((p) => { if (p.client != null && p.client !== "" && !set.includes(p.client)) set.push(p.client); });
+    if (!set.length && l.client != null && l.client !== "") set.push(l.client);
+    return set;
+  };
 
   // ---------- تحميل المنطقة ----------
   function loadRegion(name) {
@@ -225,6 +231,7 @@
 
     const plots = l.plots.map((p) =>
       `<li>قطعة ${esc(p.block)} — قسيمة ${esc(p.plot)} — ${fmtNum(p.size)} م²` +
+      ((p.client != null && p.client !== "") ? ` — رقم العميل: ${esc(p.client)}` : "") +
       (p.delivery ? ` — تاريخ التسليم: ${esc(p.delivery)}` : "") + `</li>`).join("");
 
     const transfers = l.transfers.length
@@ -362,7 +369,7 @@
     // ورقة 2: القسائم
     const plotHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "القسيمة", "المساحة (م²)", "تاريخ التسليم"];
     const plotRows = [];
-    EXP.forEach((l) => l.plots.forEach((p) => plotRows.push([l.license, clientNums(l).join(" / "), l.area, p.block, p.plot, p.size, p.delivery])));
+    EXP.forEach((l) => l.plots.forEach((p) => plotRows.push([l.license, (p.client != null && p.client !== "") ? p.client : (l.client || ""), l.area, p.block, p.plot, p.size, p.delivery])));
     XLSX.utils.book_append_sheet(wb,
       rtl(XLSX.utils.aoa_to_sheet([plotHead, ...plotRows]), [12, 11, 22, 10, 12, 14, 13]),
       "القسائم");
