@@ -1443,33 +1443,43 @@ const REGION_PLANS = {"الشعيبة الصناعية": [{"id": "plan1", "title
       return ws;
     };
     const cliOf = (l, p) => (p.client != null && p.client !== "") ? p.client : (l.client || "");
+    // تجميع قسائم الترخيص حسب رقم العميل: كل عميل مجموعة واحدة (بترتيب أول ظهور)
+    const groupByClient = (l) => {
+      const order = []; const map = {};
+      const plots = (l.plots && l.plots.length) ? l.plots : [{}];
+      plots.forEach((p) => { const c = cliOf(l, p); if (!(c in map)) { map[c] = []; order.push(c); } map[c].push(p); });
+      return order.map((c) => ({ client: c, plots: map[c] }));
+    };
+    const blocksJoin = (ps) => [...new Set(ps.map((p) => p.block).filter((b) => b != null && b !== ""))].join("، ");
+    const plotsJoin = (ps) => ps.map((p) => p.plot).filter((p) => p != null && p !== "").join("، ");
+    const delivJoin = (ps) => [...new Set(ps.map((p) => p.delivery).filter(Boolean))].join("، ");
+    const sizeSum = (ps) => ps.reduce((s, p) => s + (p.size || 0), 0);
 
-    // ورقة 1: السجلات — صفٌّ لكل قسيمة، ورقم الترخيص (والحقول العامة) مدمج عمودياً فيظهر مرة واحدة
+    // ورقة 1: السجلات — صفٌّ لكل رقم عميل (قسائمه مجمّعة)، ورقم الترخيص (والحقول العامة) مدمج عمودياً
     const boardText = (l) => (l.board || []).map((b) => `${b.minutes} (${b.date}): ${b.decision}`).join(" | ");
-    const licHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "رقم القسيمة", "مساحة القسيمة (م²)", "تاريخ التسليم",
+    const licHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "رقم القسيمة", "مساحة القسائم (م²)", "تاريخ التسليم",
       "الاسم", "الاسم التجاري", "النشاط", "غرض التخصيص", "الحالة",
       "تاريخ البداية", "تاريخ النهاية", "تاريخ صدور الدائم", "عدد حركات التنازل", "موافقة مجلس الإدارة"];
     const licRows = []; const licSpans = [];
     EXP.forEach((l) => {
       const start = licRows.length;
-      const plots = (l.plots && l.plots.length) ? l.plots : [{}];
-      plots.forEach((p) => licRows.push([l.license, cliOf(l, p), l.area, p.block, p.plot, p.size, p.delivery,
+      groupByClient(l).forEach((g) => licRows.push([l.license, g.client, l.area, blocksJoin(g.plots), plotsJoin(g.plots), sizeSum(g.plots), delivJoin(g.plots),
         l.name, l.trade, l.activity, l.purpose, l.status, l.start, l.end, (l.permanentDate || []).join(" / "), l.transfers.length, boardText(l)]));
       if (licRows.length - start > 1) licSpans.push([start, licRows.length - 1]);
     });
-    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 22, 10, 12, 15, 13, 30, 30, 50, 14, 12, 13, 13, 13, 12, 50]);
+    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 22, 10, 14, 15, 15, 30, 30, 50, 14, 12, 13, 13, 13, 12, 50]);
     mergeVertical(licSheet, licSpans, [0, 2, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
     XLSX.utils.book_append_sheet(wb, licSheet, "السجلات");
 
-    // ورقة 2: القسائم — صفٌّ لكل قسيمة مع دمج خلية رقم الترخيص والمنطقة
+    // ورقة 2: القسائم — صفٌّ لكل رقم عميل (قسائمه مجمّعة) مع دمج خلية رقم الترخيص والمنطقة
     const plotHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "القسيمة", "المساحة (م²)", "تاريخ التسليم"];
     const plotRows = []; const plotSpans = [];
     EXP.forEach((l) => {
       const start = plotRows.length;
-      l.plots.forEach((p) => plotRows.push([l.license, cliOf(l, p), l.area, p.block, p.plot, p.size, p.delivery]));
+      groupByClient(l).forEach((g) => plotRows.push([l.license, g.client, l.area, blocksJoin(g.plots), plotsJoin(g.plots), sizeSum(g.plots), delivJoin(g.plots)]));
       if (plotRows.length - start > 1) plotSpans.push([start, plotRows.length - 1]);
     });
-    const plotSheet = rtl(XLSX.utils.aoa_to_sheet([plotHead, ...plotRows]), [12, 11, 22, 10, 12, 14, 13]);
+    const plotSheet = rtl(XLSX.utils.aoa_to_sheet([plotHead, ...plotRows]), [12, 11, 22, 10, 14, 14, 15]);
     mergeVertical(plotSheet, plotSpans, [0, 2]);
     XLSX.utils.book_append_sheet(wb, plotSheet, "القسائم");
 
