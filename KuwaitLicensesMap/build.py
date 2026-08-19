@@ -16,6 +16,7 @@ def main():
     style_css = read("style.css")
     data_js = read("data.js")
     plans_js = read("plans.js")
+    allocations_js = read("allocations.js")
     app_js = read("app.js")
 
     html = f"""<!DOCTYPE html>
@@ -102,6 +103,29 @@ def main():
       <p class="plans-hint">اضغط على أي مخطط لعرضه بحجم كامل مع إمكانية التكبير والتحريك.</p>
       <div class="plans-grid" id="plansGrid"></div>
     </section>
+    <section class="allocations-section">
+      <h2 class="plans-title">📋 قرارات لجنة التخصيص</h2>
+      <p class="plans-hint" id="allocCount"></p>
+      <div class="table-wrap">
+        <table id="allocTable">
+          <thead>
+            <tr>
+              <th>السنة</th>
+              <th>المحضر</th>
+              <th>الجهة / الشركة</th>
+              <th>نوع القرار</th>
+              <th>الموضوع</th>
+              <th>المنطقة</th>
+              <th>القطعة/القسيمة</th>
+              <th>المساحة (م²)</th>
+              <th>الترخيص</th>
+              <th>نص القرار</th>
+            </tr>
+          </thead>
+          <tbody id="allocBody"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
   <div id="lightbox" class="lightbox" hidden>
     <div class="lb-bar">
@@ -133,6 +157,9 @@ def main():
   </script>
   <script>
 {plans_js}
+  </script>
+  <script>
+{allocations_js}
   </script>
   <script>
 {app_js}

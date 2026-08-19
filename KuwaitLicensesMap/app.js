@@ -5,7 +5,7 @@
   const state = { search: "", area: "", status: "", type: "", sortKey: null, sortDir: 1 };
 
   // بيانات المنطقة الحالية (تتغيّر عند اختيار المنطقة)
-  let AREAS = [], LICENSES = [], PLANS = [], currentRegionName = "";
+  let AREAS = [], LICENSES = [], PLANS = [], ALLOCATIONS = [], currentRegionName = "";
 
   const fmtNum = (n) =>
     typeof n === "number" ? n.toLocaleString("en-US", { maximumFractionDigits: 2 }) : (n || "—");
@@ -44,6 +44,7 @@
     AREAS = d.areas || [];
     LICENSES = d.licenses || [];
     PLANS = (typeof REGION_PLANS !== "undefined" && REGION_PLANS[name]) ? REGION_PLANS[name] : [];
+    ALLOCATIONS = (typeof REGION_ALLOCATIONS !== "undefined" && REGION_ALLOCATIONS[name]) ? REGION_ALLOCATIONS[name] : [];
     currentRegionName = name;
     state.search = ""; state.area = ""; state.status = ""; state.type = "";
     state.sortKey = null; state.sortDir = 1;
@@ -55,6 +56,7 @@
     drawAreas();
     renderStats();
     renderPlans();
+    renderAllocations();
     render();
   }
 
@@ -250,6 +252,15 @@
          </table>`
       : `<p style="color:var(--muted);margin:0">لا توجد موافقات مجلس إدارة مرتبطة بهذا السجل.</p>`;
 
+    const licAllocs = allocsOf(l);
+    const alloc = licAllocs.length
+      ? `<table class="hist-table">
+           <thead><tr><th>السنة</th><th>المحضر</th><th>نوع القرار</th><th>الموضوع</th><th>القطعة/القسيمة</th><th>المساحة</th><th>نص القرار</th></tr></thead>
+           <tbody>${licAllocs.map((a) =>
+             `<tr><td>${esc(a.year)}</td><td>${esc(a.minutes)}</td><td><span class="rec-type">${esc(a.type)}</span></td><td>${esc(a.subject)}</td><td>${esc(a.plot || "—")}</td><td>${a.size != null && a.size !== "" ? fmtNum(a.size) : "—"}</td><td>${esc(a.text)}</td></tr>`).join("")}</tbody>
+         </table>`
+      : "";
+
     const row = document.createElement("tr");
     row.className = "detail-row";
     row.innerHTML = `<td colspan="15"><div class="detail-inner">
@@ -274,6 +285,7 @@
         ${transfers}
         <h4 style="margin-top:12px">موافقات مجلس الإدارة (${l.board ? l.board.length : 0})</h4>
         ${board}
+        ${licAllocs.length ? `<h4 style="margin-top:12px">قرارات لجنة التخصيص (${licAllocs.length})</h4>${alloc}` : ""}
       </div></td>`;
     tr.after(row);
   }
@@ -417,6 +429,16 @@
       rtl(XLSX.utils.aoa_to_sheet([bHead, ...bRows]), [12, 11, 28, 10, 12, 24, 28, 32, 46, 30]),
       "موافقات مجلس الإدارة");
 
+    // ورقة 5: قرارات لجنة التخصيص (كل القرارات للمنطقة)
+    if (ALLOCATIONS && ALLOCATIONS.length) {
+      const aHead = ["السنة", "المحضر", "الجهة / الشركة", "نوع القرار", "الموضوع", "المنطقة", "القطعة / القسيمة", "المساحة (م²)", "الترخيص المطابق", "نص القرار", "المصدر"];
+      const aRows = ALLOCATIONS.map((a) => [a.year, a.minutes, a.company, a.type, a.subject, a.area, a.plot, a.size,
+        a.license || "غير مسجّل", a.text, a.source]);
+      XLSX.utils.book_append_sheet(wb,
+        rtl(XLSX.utils.aoa_to_sheet([aHead, ...aRows]), [8, 12, 30, 16, 30, 16, 18, 12, 14, 60, 14]),
+        "قرارات لجنة التخصيص");
+    }
+
     XLSX.writeFile(wb, `تراخيص_${currentRegionName || "المنطقة"}${isFiltered ? "_مُصفّى" : ""}.xlsx`);
   }
 
@@ -465,6 +487,44 @@
       </div>`).join("");
     grid.querySelectorAll(".plan-card").forEach((c) =>
       c.addEventListener("click", () => openLightbox(PLANS[+c.dataset.i])));
+  }
+
+  // ---------- قرارات لجنة التخصيص ----------
+  const allocsOf = (l) => ALLOCATIONS.filter((a) => a.license && String(a.license) === String(l.license));
+  function renderAllocations() {
+    const sec = document.querySelector(".allocations-section");
+    const body = document.getElementById("allocBody");
+    const has = ALLOCATIONS && ALLOCATIONS.length;
+    if (sec) sec.style.display = has ? "" : "none";
+    if (!body) return;
+    if (!has) { body.innerHTML = ""; return; }
+    body.innerHTML = ALLOCATIONS.map((a) => `
+      <tr>
+        <td>${esc(a.year || "")}</td>
+        <td>${esc(a.minutes || "")}</td>
+        <td class="name-cell">${esc(a.company || "")}</td>
+        <td><span class="rec-type">${esc(a.type || "")}</span></td>
+        <td class="name-cell">${esc(a.subject || "")}</td>
+        <td>${esc(a.area || "")}</td>
+        <td>${esc(a.plot || "—")}</td>
+        <td>${a.size != null && a.size !== "" ? fmtNum(a.size) : "—"}</td>
+        <td>${a.license ? `<a href="#" class="alloc-lic" data-lic="${esc(a.license)}">${esc(a.license)}</a>` : '<span class="muted">غير مسجّل</span>'}</td>
+        <td class="alloc-text">${esc(a.text || "")}</td>
+      </tr>`).join("");
+    body.querySelectorAll(".alloc-lic").forEach((el) =>
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        const q = el.dataset.lic;
+        const si = document.getElementById("search");
+        if (si) { si.value = q; state.search = q.toLowerCase(); }
+        render();
+        document.querySelector(".table-section").scrollIntoView({ behavior: "smooth" });
+      }));
+    const cnt = document.getElementById("allocCount");
+    if (cnt) {
+      const matched = ALLOCATIONS.filter((a) => a.license).length;
+      cnt.textContent = `${ALLOCATIONS.length} قرار (${matched} مرتبط بترخيص مسجّل)`;
+    }
   }
 
   const lb = { scale: 1, x: 0, y: 0, dragging: false, sx: 0, sy: 0, ox: 0, oy: 0 };

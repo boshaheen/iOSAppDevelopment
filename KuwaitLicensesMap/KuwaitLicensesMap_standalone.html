@@ -863,6 +863,14 @@ tbody tr.main-row.active { background: #223347; }
 @media (prefers-reduced-motion: reduce) { .gears svg { animation: none; } }
 
 /* المخططات */
+.allocations-section { margin-top: 26px; }
+.allocations-section .table-wrap { max-height: 520px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; }
+#allocTable { width: 100%; border-collapse: collapse; font-size: .86rem; }
+#allocTable thead th { position: sticky; top: 0; background: var(--panel); z-index: 1; }
+#allocTable td.alloc-text { min-width: 320px; color: var(--muted); font-size: .82rem; }
+#allocTable .alloc-lic { color: #7cc0ef; text-decoration: none; font-weight: 700; }
+#allocTable .alloc-lic:hover { text-decoration: underline; }
+#allocTable .muted { color: var(--muted); font-size: .8rem; }
 .plans-section { margin-top: 26px; }
 .plans-title { margin: 0 0 4px; font-size: 1.25rem; }
 .plans-hint { margin: 0 0 14px; color: var(--muted); font-size: .9rem; }
@@ -914,7 +922,7 @@ tbody tr.main-row.active { background: #223347; }
   @page { size: A4 landscape; margin: 12mm 10mm; }
   html, body { background: #fff !important; color: #000 !important; }
   .site-header, .stats, .map-section, .controls, .plans-section, .approvals-section,
-  .site-footer, #lightbox, #splash, #regions { display: none !important; }
+  .allocations-section, .site-footer, #lightbox, #splash, #regions { display: none !important; }
   main { max-width: none; margin: 0; padding: 0; }
 
   .print-only { display: block; margin-bottom: 10px; }
@@ -1017,6 +1025,29 @@ tbody tr.main-row.active { background: #223347; }
       <p class="plans-hint">اضغط على أي مخطط لعرضه بحجم كامل مع إمكانية التكبير والتحريك.</p>
       <div class="plans-grid" id="plansGrid"></div>
     </section>
+    <section class="allocations-section">
+      <h2 class="plans-title">📋 قرارات لجنة التخصيص</h2>
+      <p class="plans-hint" id="allocCount"></p>
+      <div class="table-wrap">
+        <table id="allocTable">
+          <thead>
+            <tr>
+              <th>السنة</th>
+              <th>المحضر</th>
+              <th>الجهة / الشركة</th>
+              <th>نوع القرار</th>
+              <th>الموضوع</th>
+              <th>المنطقة</th>
+              <th>القطعة/القسيمة</th>
+              <th>المساحة (م²)</th>
+              <th>الترخيص</th>
+              <th>نص القرار</th>
+            </tr>
+          </thead>
+          <tbody id="allocBody"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
   <div id="lightbox" class="lightbox" hidden>
     <div class="lb-bar">
@@ -1081,6 +1112,11 @@ const REGION_PLANS = {"الشعيبة الصناعية": [{"id": "plan1", "title
 
   </script>
   <script>
+// قرارات لجنة التخصيص لكل منطقة (تُعرض في قسم مستقل وضمن تفاصيل الترخيص المطابق).
+const REGION_ALLOCATIONS = {"الشعيبة الصناعية": [{"year": 1998, "minutes": "98/1", "company": "شركة التبريد والأكسجين المحدودة", "type": "توسعة", "subject": "اعتبار قسيمة متنازل عنها توسعة", "area": "الشعيبة الصناعية", "plot": "", "size": 11665, "text": "اعتبار القسيمة المتنازل عنها بالشعيبة الصناعية توسعة للقسيمة القائمة للشركة بمساحة 11,665 م².", "page": "8", "source": "98.pdf", "license": "13883"}, {"year": 1999, "minutes": "99/2", "company": "مصنع الشرهان للإيروسول", "type": "توسعة", "subject": "توسعة مصنع الإيروسول", "area": "الشعيبة الغربية", "plot": "", "size": 3000, "text": "الموافقة على تخصيص قسيمة كتوسعة للمصنع بمساحة 3,000 م² ليصبح إجمالي المساحة 13,000 م².", "page": "18", "source": "99.pdf", "license": "10548"}, {"year": 2004, "minutes": "2004/1", "company": "شركة كويت فيروكروم", "type": "تخصيص", "subject": "توطين مصنع الكروم الحديدي عالي الكربون", "area": "الشعيبة الغربية", "plot": "", "size": 30000, "text": "الموافقة على تخصيص وتسليم مساحة 30,000 م² لتوطين مشروع مصنع الكروم الحديدي عالي الكربون بمنطقة الشعيبة الغربية.", "page": "5", "source": "2004.pdf", "license": null}, {"year": 2004, "minutes": "2004/1", "company": "شركة الغانم وناس", "type": "طلب توسعة", "subject": "طلب زيادة مساحة المصنع", "area": "الشعيبة الغربية", "plot": "", "size": null, "text": "طلب توسعة وإلزام الشركة باستكمال البيانات والمخططات قبل البت النهائي.", "page": "4", "source": "2004.pdf", "license": null}, {"year": 2008, "minutes": "2008/3", "company": "شركة السكر العالمية", "type": "تخصيص مشروط", "subject": "تكرير السكر الخام", "area": "الشعيبة الشرقية", "plot": "", "size": 35000, "text": "الموافقة المشروطة على تخصيص قسيمة صناعية في الشعيبة الشرقية بمساحة 35,000 م² بعد استكمال الموافقات الحكومية.", "page": "4-6", "source": "2008.pdf", "license": null}, {"year": 2008, "minutes": "2008/3", "company": "شركة كي جي إل البترولية", "type": "تخصيص مشروط", "subject": "مشروع PET", "area": "الشعيبة الغربية", "plot": "قطعة 11", "size": 56000, "text": "الموافقة المشروطة على تخصيص قسيمة صناعية بالشعيبة الغربية قطعة 11 بمساحة 56,000 م².", "page": "4-6", "source": "2008.pdf", "license": null}, {"year": 2008, "minutes": "2008/3", "company": "شركة الإعمار للكيماويات", "type": "تخصيص مشروط", "subject": "زيوت وشحوم صناعية", "area": "الشعيبة الغربية", "plot": "قطعة 11", "size": 60000, "text": "الموافقة المشروطة على تخصيص قسيمة صناعية بالشعيبة الغربية قطعة 11 بمساحة 60,000 م².", "page": "4-6", "source": "2008.pdf", "license": null}, {"year": 2008, "minutes": "2008/3", "company": "مؤسسة الأمم الخليجية", "type": "تخصيص مشروط", "subject": "الأسمنت البورتلاندي والأبيض", "area": "الشعيبة الغربية", "plot": "قطعة 11", "size": 54000, "text": "الموافقة المشروطة على تخصيص قسيمة صناعية بالشعيبة الغربية قطعة 11 بمساحة 54,000 م².", "page": "4-6", "source": "2008.pdf", "license": null}, {"year": 2008, "minutes": "2008/3", "company": "شركة السواحل الماسية", "type": "تخصيص مشروط", "subject": "تجميع محطات الطاقة", "area": "الشعيبة الغربية", "plot": "قطعة 11", "size": 11000, "text": "الموافقة المشروطة على تخصيص قسيمة صناعية بالشعيبة الغربية قطعة 11 بمساحة 11,000 م².", "page": "4-6", "source": "2008.pdf", "license": null}, {"year": 2009, "minutes": "2009/1", "company": "شركة سبيك الخليج", "type": "تخصيص مؤقت", "subject": "مكاتب المقاول والتشوين", "area": "الشعيبة الغربية", "plot": "", "size": 15000, "text": "الموافقة على تخصيص قسيمة مؤقتة بالشعيبة الغربية لمكاتب المقاول والتشوين بمساحة 15,000 م².", "page": "4", "source": "2009.pdf", "license": "16647"}, {"year": 2009, "minutes": "2009/1", "company": "شركة الصناعات الهندسية الثقيلة وبناء السفن", "type": "تخصيص مؤقت", "subject": "مكاتب المقاول والتشوين", "area": "الشعيبة الغربية", "plot": "", "size": 15000, "text": "الموافقة على تخصيص قسيمة مؤقتة بالشعيبة الغربية لمكاتب المقاول والتشوين بمساحة 15,000 م².", "page": "5", "source": "2009.pdf", "license": "10873"}, {"year": 2009, "minutes": "2009/1", "company": "شركة أسمنت الكويت", "type": "تخصيص مؤقت", "subject": "مكاتب المقاول والتشوين", "area": "الشعيبة الشرقية", "plot": "", "size": 50000, "text": "الموافقة على تخصيص قسيمة مؤقتة بالشعيبة الشرقية لمكاتب المقاول والتشوين بمساحة 50,000 م².", "page": "5", "source": "2009.pdf", "license": "10187"}, {"year": 2010, "minutes": "2010/5", "company": "شركة الكوت للمشاريع الصناعية", "type": "توسعة", "subject": "توسعة المشروع الصناعي", "area": "الشعيبة الشرقية", "plot": "", "size": 28500, "text": "الموافقة على تخصيص مساحة 28,500 م² كتوسعة للمشروع بالشعيبة الشرقية ورفع التوصية لمجلس الإدارة.", "page": "24", "source": "2010.pdf", "license": "10512"}, {"year": 2010, "minutes": "2010/6", "company": "شركة النفيسي الدولية", "type": "تخصيص مشروط", "subject": "إنتاج غاز ثاني أكسيد الكربون المسال", "area": "الشعيبة الشرقية", "plot": "", "size": 20000, "text": "الموافقة على تخصيص مساحة 20,000 م² بمنطقة الشعيبة الشرقية لإقامة مشروع إنتاج غاز ثاني أكسيد الكربون المسال، شريطة موافقة الجهات المعنية.", "page": "25", "source": "2010.pdf", "license": null}, {"year": 2010, "minutes": "2010/6", "company": "الشركة الكويتية لإنتاج الزيوت والشحوم", "type": "توسعة", "subject": "تخزين المنتج النهائي", "area": "الشعيبة", "plot": "", "size": 2835, "text": "تناولت اللجنة توسعة بمساحة 2,835 م² لتخزين المنتج النهائي في الشعيبة.", "page": "41-42", "source": "2010.pdf", "license": "10602"}, {"year": 2010, "minutes": "2010/6", "company": "شركة أسمنت الكويت", "type": "مساحة إضافية", "subject": "مساحة إضافية للمصنع وبرج التدريب", "area": "الشعيبة", "plot": "", "size": 1297.6, "text": "الموافقة على تخصيص مساحة إضافية للمصنع مقدارها 1,275 م² إضافة إلى 22.6 م².", "page": "43", "source": "2010.pdf", "license": "10187"}, {"year": 2011, "minutes": "2011/1", "company": "شركة البترول الوطنية الكويتية", "type": "تخصيص مؤقت", "subject": "تخزين المواد والمعدات", "area": "الشعيبة الشرقية", "plot": "", "size": 8100, "text": "الموافقة على تخصيص قسيمة مؤقتة بمساحة 8,100 م² لتخزين المواد والمعدات لمدة ستة أشهر قابلة للتجديد.", "page": "22", "source": "2011.pdf", "license": "10534"}, {"year": 2011, "minutes": "2011/1", "company": "شركة بيداء الخليج", "type": "توسعة / إعادة توزيع", "subject": "وحدة صهر الرصاص", "area": "الشعيبة الشرقية", "plot": "", "size": 2000, "text": "زيادة المساحة الإجمالية إلى 5,000 م² منها 2,000 م² بالشعيبة الشرقية لوحدة صهر الرصاص.", "page": "6", "source": "2011.pdf", "license": null}, {"year": 2013, "minutes": "2013/15", "company": "الشركة المتحدة لصناعة الحديد", "type": "توسعة", "subject": "ضم مساحة مجاورة للقسيمتين", "area": "الشعيبة الغربية", "plot": "القسيمتان 53 و56، قطعة 2", "size": 700, "text": "الموافقة على ضم مساحة 700 م² كتوسعة للقسيمتين 53 و56 قطعة 2 بالشعيبة الغربية.", "page": "44", "source": "10 to 29 2013.pdf", "license": "10797"}, {"year": 2016, "minutes": "2016/1", "company": "الرئاسة العامة للحرس الوطني", "type": "تخصيص", "subject": "إعادة تخصيص قسيمة مخلاة", "area": "الشعيبة الشرقية", "plot": "قطعة 2، قسيمة 5", "size": null, "text": "الموافقة على تخصيص القسيمة رقم 5 قطعة 2 بمنطقة الشعيبة الشرقية بعد إخلائها من بنك الخليج.", "page": "4", "source": "1 to 8 2016.pdf", "license": null}, {"year": 2017, "minutes": "2017/25", "company": "شركة الإنشاء والتصنيع العقاري", "type": "توسعة", "subject": "توسعة المصنع", "area": "الشعيبة الغربية", "plot": "قطعة 1", "size": 6598, "text": "الموافقة على تخصيص مساحة 6,598 م² كتوسعة للمصنع بالشعيبة الغربية قطعة 1.", "page": "6", "source": "25 2017.pdf", "license": "10223"}, {"year": 2020, "minutes": "2020/3", "company": "مصنع الخليج للإستانلس ستيل", "type": "تثبيت توسعة", "subject": "إلغاء قرار استرجاع التوسعة", "area": "الشعيبة الغربية", "plot": "قسيمة 7، قطعة 10", "size": 4000, "text": "إلغاء قرار استرجاع توسعة القسيمة رقم 7 قطعة 10 بالشعيبة الغربية بمساحة 4,000 م² وتمديد العقد.", "page": "69", "source": "1 to 5 2020.pdf", "license": "10774"}]};
+
+  </script>
+  <script>
 /* خريطة تراخيص الشعيبة الصناعية - منطق التطبيق */
 (function () {
   "use strict";
@@ -1088,7 +1124,7 @@ const REGION_PLANS = {"الشعيبة الصناعية": [{"id": "plan1", "title
   const state = { search: "", area: "", status: "", type: "", sortKey: null, sortDir: 1 };
 
   // بيانات المنطقة الحالية (تتغيّر عند اختيار المنطقة)
-  let AREAS = [], LICENSES = [], PLANS = [], currentRegionName = "";
+  let AREAS = [], LICENSES = [], PLANS = [], ALLOCATIONS = [], currentRegionName = "";
 
   const fmtNum = (n) =>
     typeof n === "number" ? n.toLocaleString("en-US", { maximumFractionDigits: 2 }) : (n || "—");
@@ -1127,6 +1163,7 @@ const REGION_PLANS = {"الشعيبة الصناعية": [{"id": "plan1", "title
     AREAS = d.areas || [];
     LICENSES = d.licenses || [];
     PLANS = (typeof REGION_PLANS !== "undefined" && REGION_PLANS[name]) ? REGION_PLANS[name] : [];
+    ALLOCATIONS = (typeof REGION_ALLOCATIONS !== "undefined" && REGION_ALLOCATIONS[name]) ? REGION_ALLOCATIONS[name] : [];
     currentRegionName = name;
     state.search = ""; state.area = ""; state.status = ""; state.type = "";
     state.sortKey = null; state.sortDir = 1;
@@ -1138,6 +1175,7 @@ const REGION_PLANS = {"الشعيبة الصناعية": [{"id": "plan1", "title
     drawAreas();
     renderStats();
     renderPlans();
+    renderAllocations();
     render();
   }
 
@@ -1333,6 +1371,15 @@ const REGION_PLANS = {"الشعيبة الصناعية": [{"id": "plan1", "title
          </table>`
       : `<p style="color:var(--muted);margin:0">لا توجد موافقات مجلس إدارة مرتبطة بهذا السجل.</p>`;
 
+    const licAllocs = allocsOf(l);
+    const alloc = licAllocs.length
+      ? `<table class="hist-table">
+           <thead><tr><th>السنة</th><th>المحضر</th><th>نوع القرار</th><th>الموضوع</th><th>القطعة/القسيمة</th><th>المساحة</th><th>نص القرار</th></tr></thead>
+           <tbody>${licAllocs.map((a) =>
+             `<tr><td>${esc(a.year)}</td><td>${esc(a.minutes)}</td><td><span class="rec-type">${esc(a.type)}</span></td><td>${esc(a.subject)}</td><td>${esc(a.plot || "—")}</td><td>${a.size != null && a.size !== "" ? fmtNum(a.size) : "—"}</td><td>${esc(a.text)}</td></tr>`).join("")}</tbody>
+         </table>`
+      : "";
+
     const row = document.createElement("tr");
     row.className = "detail-row";
     row.innerHTML = `<td colspan="15"><div class="detail-inner">
@@ -1357,6 +1404,7 @@ const REGION_PLANS = {"الشعيبة الصناعية": [{"id": "plan1", "title
         ${transfers}
         <h4 style="margin-top:12px">موافقات مجلس الإدارة (${l.board ? l.board.length : 0})</h4>
         ${board}
+        ${licAllocs.length ? `<h4 style="margin-top:12px">قرارات لجنة التخصيص (${licAllocs.length})</h4>${alloc}` : ""}
       </div></td>`;
     tr.after(row);
   }
@@ -1500,6 +1548,16 @@ const REGION_PLANS = {"الشعيبة الصناعية": [{"id": "plan1", "title
       rtl(XLSX.utils.aoa_to_sheet([bHead, ...bRows]), [12, 11, 28, 10, 12, 24, 28, 32, 46, 30]),
       "موافقات مجلس الإدارة");
 
+    // ورقة 5: قرارات لجنة التخصيص (كل القرارات للمنطقة)
+    if (ALLOCATIONS && ALLOCATIONS.length) {
+      const aHead = ["السنة", "المحضر", "الجهة / الشركة", "نوع القرار", "الموضوع", "المنطقة", "القطعة / القسيمة", "المساحة (م²)", "الترخيص المطابق", "نص القرار", "المصدر"];
+      const aRows = ALLOCATIONS.map((a) => [a.year, a.minutes, a.company, a.type, a.subject, a.area, a.plot, a.size,
+        a.license || "غير مسجّل", a.text, a.source]);
+      XLSX.utils.book_append_sheet(wb,
+        rtl(XLSX.utils.aoa_to_sheet([aHead, ...aRows]), [8, 12, 30, 16, 30, 16, 18, 12, 14, 60, 14]),
+        "قرارات لجنة التخصيص");
+    }
+
     XLSX.writeFile(wb, `تراخيص_${currentRegionName || "المنطقة"}${isFiltered ? "_مُصفّى" : ""}.xlsx`);
   }
 
@@ -1548,6 +1606,44 @@ const REGION_PLANS = {"الشعيبة الصناعية": [{"id": "plan1", "title
       </div>`).join("");
     grid.querySelectorAll(".plan-card").forEach((c) =>
       c.addEventListener("click", () => openLightbox(PLANS[+c.dataset.i])));
+  }
+
+  // ---------- قرارات لجنة التخصيص ----------
+  const allocsOf = (l) => ALLOCATIONS.filter((a) => a.license && String(a.license) === String(l.license));
+  function renderAllocations() {
+    const sec = document.querySelector(".allocations-section");
+    const body = document.getElementById("allocBody");
+    const has = ALLOCATIONS && ALLOCATIONS.length;
+    if (sec) sec.style.display = has ? "" : "none";
+    if (!body) return;
+    if (!has) { body.innerHTML = ""; return; }
+    body.innerHTML = ALLOCATIONS.map((a) => `
+      <tr>
+        <td>${esc(a.year || "")}</td>
+        <td>${esc(a.minutes || "")}</td>
+        <td class="name-cell">${esc(a.company || "")}</td>
+        <td><span class="rec-type">${esc(a.type || "")}</span></td>
+        <td class="name-cell">${esc(a.subject || "")}</td>
+        <td>${esc(a.area || "")}</td>
+        <td>${esc(a.plot || "—")}</td>
+        <td>${a.size != null && a.size !== "" ? fmtNum(a.size) : "—"}</td>
+        <td>${a.license ? `<a href="#" class="alloc-lic" data-lic="${esc(a.license)}">${esc(a.license)}</a>` : '<span class="muted">غير مسجّل</span>'}</td>
+        <td class="alloc-text">${esc(a.text || "")}</td>
+      </tr>`).join("");
+    body.querySelectorAll(".alloc-lic").forEach((el) =>
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        const q = el.dataset.lic;
+        const si = document.getElementById("search");
+        if (si) { si.value = q; state.search = q.toLowerCase(); }
+        render();
+        document.querySelector(".table-section").scrollIntoView({ behavior: "smooth" });
+      }));
+    const cnt = document.getElementById("allocCount");
+    if (cnt) {
+      const matched = ALLOCATIONS.filter((a) => a.license).length;
+      cnt.textContent = `${ALLOCATIONS.length} قرار (${matched} مرتبط بترخيص مسجّل)`;
+    }
   }
 
   const lb = { scale: 1, x: 0, y: 0, dragging: false, sx: 0, sy: 0, ox: 0, oy: 0 };
