@@ -91,6 +91,7 @@ def main():
               <th data-key="permanentDate">تاريخ صدور الدائم</th>
               <th data-key="trCount">حركات التنازل</th>
               <th data-key="boardCount">موافقة مجلس الإدارة</th>
+              <th data-key="allocCount">لجنة التخصيص</th>
             </tr>
           </thead>
           <tbody id="licBody"></tbody>

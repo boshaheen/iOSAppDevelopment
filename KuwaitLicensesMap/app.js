@@ -173,13 +173,14 @@
     const val = (l) =>
       k === "trCount" ? l.transfers.length :
       k === "boardCount" ? (l.board ? l.board.length : 0) :
+      k === "allocCount" ? allocsOf(l).length :
       k === "clientPlots" ? clientPlotsOf(l) :
       k === "size" ? (l.totalSize || 0) :
       k === "block" ? (l.plots[0] ? l.plots[0].block : "") :
       k === "plot" ? (l.plots[0] ? l.plots[0].plot : "") : l[k];
     return rows.slice().sort((a, b) => {
       let va = val(a), vb = val(b);
-      if (k === "size" || k === "trCount" || k === "clientPlots" || k === "boardCount") return ((va || 0) - (vb || 0)) * state.sortDir;
+      if (k === "size" || k === "trCount" || k === "clientPlots" || k === "boardCount" || k === "allocCount") return ((va || 0) - (vb || 0)) * state.sortDir;
       const na = parseFloat(va), nb = parseFloat(vb);
       if (!isNaN(na) && !isNaN(nb)) return (na - nb) * state.sortDir;
       return String(va || "").localeCompare(String(vb || ""), "ar") * state.sortDir;
@@ -210,6 +211,7 @@
         <td>${(l.permanentDate && l.permanentDate.length) ? l.permanentDate.map(esc).join("<br>") : "—"}</td>
         <td>${badge}</td>
         <td>${(l.board && l.board.length) ? `<span class="badge board">${l.board.length}</span>` : `<span class="badge zero">—</span>`}</td>
+        <td>${allocsOf(l).length ? `<span class="badge alloc">${allocsOf(l).length}</span>` : `<span class="badge zero">—</span>`}</td>
       </tr>`;
     }).join("");
 
@@ -263,7 +265,7 @@
 
     const row = document.createElement("tr");
     row.className = "detail-row";
-    row.innerHTML = `<td colspan="15"><div class="detail-inner">
+    row.innerHTML = `<td colspan="16"><div class="detail-inner">
         <div class="detail-grid">
           <div><div class="k">الاسم الحالي للترخيص</div><div class="v">${esc(l.name)}</div></div>
           <div><div class="k">الاسم التجاري</div><div class="v">${esc(l.trade)}</div></div>
