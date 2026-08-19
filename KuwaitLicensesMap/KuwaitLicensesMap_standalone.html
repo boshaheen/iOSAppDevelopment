@@ -1011,11 +1011,11 @@ tbody tr.main-row.active { background: #223347; }
               <th data-key="status">حالة الترخيص</th>
               <th data-key="end">تاريخ النهاية</th>
               <th data-key="delivery">تاريخ التسليم</th>
+              <th data-key="approvalReq">رقم طلب الموافقة</th>
               <th data-key="permanentDate">تاريخ صدور الدائم</th>
               <th data-key="trCount">حركات التنازل</th>
               <th data-key="boardCount">موافقة مجلس الإدارة</th>
               <th data-key="allocCount">لجنة التخصيص</th>
-              <th data-key="approvalReq">رقم طلب الموافقة</th>
             </tr>
           </thead>
           <tbody id="licBody"></tbody>
@@ -1308,11 +1308,11 @@ const REGION_ALLOCATIONS = {"الشعيبة الصناعية": [{"year": 1998, "
         <td><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></td>
         <td>${esc(l.end)}</td>
         <td>${esc(l.delivery)}</td>
+        <td>${(l.approvals && l.approvals.length) ? l.approvals.map((a) => esc(a.reqNo)).join("<br>") : "—"}</td>
         <td>${(l.permanentDate && l.permanentDate.length) ? l.permanentDate.map(esc).join("<br>") : "—"}</td>
         <td>${badge}</td>
         <td>${(l.board && l.board.length) ? `<span class="badge board">${l.board.length}</span>` : `<span class="badge zero">—</span>`}</td>
         <td>${allocsOf(l).length ? `<span class="badge alloc">${allocsOf(l).length}</span>` : `<span class="badge zero">—</span>`}</td>
-        <td>${(l.approvals && l.approvals.length) ? l.approvals.map((a) => esc(a.reqNo)).join("<br>") : "—"}</td>
       </tr>`;
     }).join("");
 
@@ -1502,17 +1502,17 @@ const REGION_ALLOCATIONS = {"الشعيبة الصناعية": [{"year": 1998, "
     const transferTo = (l) => (l.transfers || []).map((t) => `${t.to || "—"}`).join(" | ");
     const allocText = (l) => allocsOf(l).map((a) => `${a.type || ""}${a.minutes ? " (" + a.minutes + ")" : ""}: ${a.subject || a.text || ""}`).join(" | ");
     const approvalText = (l) => (l.approvals || []).map((a) => a.reqNo).join("، ");
-    const licHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "رقم القسيمة", "مساحة القسائم (م²)", "تاريخ التسليم",
+    const licHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "رقم القسيمة", "مساحة القسائم (م²)", "تاريخ التسليم", "رقم طلب الموافقة",
       "الاسم", "الاسم التجاري", "النشاط", "غرض التخصيص", "الحالة",
-      "تاريخ البداية", "تاريخ النهاية", "تاريخ صدور الدائم", "المتنازِل", "المتنازَل إليه", "قرار مجلس الإدارة", "قرار لجنة التخصيص", "رقم طلب الموافقة"];
+      "تاريخ البداية", "تاريخ النهاية", "تاريخ صدور الدائم", "المتنازِل", "المتنازَل إليه", "قرار مجلس الإدارة", "قرار لجنة التخصيص"];
     const licRows = []; const licSpans = [];
     EXP.forEach((l) => {
       const start = licRows.length;
-      groupByClient(l).forEach((g) => licRows.push([l.license, g.client, l.area, blocksJoin(g.plots), plotsJoin(g.plots), sizeSum(g.plots), delivJoin(g.plots),
-        l.name, l.trade, l.activity, l.purpose, l.status, l.start, l.end, (l.permanentDate || []).join(" / "), transferFrom(l), transferTo(l), boardText(l), allocText(l), approvalText(l)]));
+      groupByClient(l).forEach((g) => licRows.push([l.license, g.client, l.area, blocksJoin(g.plots), plotsJoin(g.plots), sizeSum(g.plots), delivJoin(g.plots), approvalText(l),
+        l.name, l.trade, l.activity, l.purpose, l.status, l.start, l.end, (l.permanentDate || []).join(" / "), transferFrom(l), transferTo(l), boardText(l), allocText(l)]));
       if (licRows.length - start > 1) licSpans.push([start, licRows.length - 1]);
     });
-    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 22, 10, 14, 15, 15, 30, 30, 50, 14, 12, 13, 13, 13, 34, 34, 50, 50, 18]);
+    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 22, 10, 14, 15, 15, 18, 30, 30, 50, 14, 12, 13, 13, 13, 34, 34, 50, 50]);
     mergeVertical(licSheet, licSpans, [0, 2, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
     XLSX.utils.book_append_sheet(wb, licSheet, "السجلات");
 
