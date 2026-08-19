@@ -174,6 +174,7 @@
       k === "trCount" ? l.transfers.length :
       k === "boardCount" ? (l.board ? l.board.length : 0) :
       k === "allocCount" ? allocsOf(l).length :
+      k === "approvalReq" ? (l.approvals && l.approvals[0] ? l.approvals[0].reqNo : "") :
       k === "clientPlots" ? clientPlotsOf(l) :
       k === "size" ? (l.totalSize || 0) :
       k === "block" ? (l.plots[0] ? l.plots[0].block : "") :
@@ -212,6 +213,7 @@
         <td>${badge}</td>
         <td>${(l.board && l.board.length) ? `<span class="badge board">${l.board.length}</span>` : `<span class="badge zero">—</span>`}</td>
         <td>${allocsOf(l).length ? `<span class="badge alloc">${allocsOf(l).length}</span>` : `<span class="badge zero">—</span>`}</td>
+        <td>${(l.approvals && l.approvals.length) ? l.approvals.map((a) => esc(a.reqNo)).join("<br>") : "—"}</td>
       </tr>`;
     }).join("");
 
@@ -254,6 +256,14 @@
          </table>`
       : `<p style="color:var(--muted);margin:0">لا توجد موافقات مجلس إدارة مرتبطة بهذا السجل.</p>`;
 
+    const approvals = (l.approvals && l.approvals.length)
+      ? `<table class="hist-table">
+           <thead><tr><th>رقم الطلب</th><th>تاريخ الطلب</th><th>الإجراء</th></tr></thead>
+           <tbody>${l.approvals.map((a) =>
+             `<tr><td>${esc(a.reqNo)}</td><td>${esc(a.date || "—")}</td><td>${esc(a.action || "")}</td></tr>`).join("")}</tbody>
+         </table>`
+      : "";
+
     const licAllocs = allocsOf(l);
     const alloc = licAllocs.length
       ? `<table class="hist-table">
@@ -265,7 +275,7 @@
 
     const row = document.createElement("tr");
     row.className = "detail-row";
-    row.innerHTML = `<td colspan="16"><div class="detail-inner">
+    row.innerHTML = `<td colspan="17"><div class="detail-inner">
         <div class="detail-grid">
           <div><div class="k">الاسم الحالي للترخيص</div><div class="v">${esc(l.name)}</div></div>
           <div><div class="k">الاسم التجاري</div><div class="v">${esc(l.trade)}</div></div>
@@ -288,6 +298,7 @@
         <h4 style="margin-top:12px">موافقات مجلس الإدارة (${l.board ? l.board.length : 0})</h4>
         ${board}
         ${licAllocs.length ? `<h4 style="margin-top:12px">قرارات لجنة التخصيص (${licAllocs.length})</h4>${alloc}` : ""}
+        ${(l.approvals && l.approvals.length) ? `<h4 style="margin-top:12px">طلبات الموافقة (${l.approvals.length})</h4>${approvals}` : ""}
       </div></td>`;
     tr.after(row);
   }
@@ -391,18 +402,19 @@
     const transferFrom = (l) => (l.transfers || []).map((t) => `${t.date ? t.date + ": " : ""}${t.from || "—"}`).join(" | ");
     const transferTo = (l) => (l.transfers || []).map((t) => `${t.to || "—"}`).join(" | ");
     const allocText = (l) => allocsOf(l).map((a) => `${a.type || ""}${a.minutes ? " (" + a.minutes + ")" : ""}: ${a.subject || a.text || ""}`).join(" | ");
+    const approvalText = (l) => (l.approvals || []).map((a) => a.reqNo).join("، ");
     const licHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "رقم القسيمة", "مساحة القسائم (م²)", "تاريخ التسليم",
       "الاسم", "الاسم التجاري", "النشاط", "غرض التخصيص", "الحالة",
-      "تاريخ البداية", "تاريخ النهاية", "تاريخ صدور الدائم", "المتنازِل", "المتنازَل إليه", "قرار مجلس الإدارة", "قرار لجنة التخصيص"];
+      "تاريخ البداية", "تاريخ النهاية", "تاريخ صدور الدائم", "المتنازِل", "المتنازَل إليه", "قرار مجلس الإدارة", "قرار لجنة التخصيص", "رقم طلب الموافقة"];
     const licRows = []; const licSpans = [];
     EXP.forEach((l) => {
       const start = licRows.length;
       groupByClient(l).forEach((g) => licRows.push([l.license, g.client, l.area, blocksJoin(g.plots), plotsJoin(g.plots), sizeSum(g.plots), delivJoin(g.plots),
-        l.name, l.trade, l.activity, l.purpose, l.status, l.start, l.end, (l.permanentDate || []).join(" / "), transferFrom(l), transferTo(l), boardText(l), allocText(l)]));
+        l.name, l.trade, l.activity, l.purpose, l.status, l.start, l.end, (l.permanentDate || []).join(" / "), transferFrom(l), transferTo(l), boardText(l), allocText(l), approvalText(l)]));
       if (licRows.length - start > 1) licSpans.push([start, licRows.length - 1]);
     });
-    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 22, 10, 14, 15, 15, 30, 30, 50, 14, 12, 13, 13, 13, 34, 34, 50, 50]);
-    mergeVertical(licSheet, licSpans, [0, 2, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 22, 10, 14, 15, 15, 30, 30, 50, 14, 12, 13, 13, 13, 34, 34, 50, 50, 18]);
+    mergeVertical(licSheet, licSpans, [0, 2, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
     XLSX.utils.book_append_sheet(wb, licSheet, "السجلات");
 
     // ورقة 2: القسائم — صفٌّ لكل رقم عميل (قسائمه مجمّعة) مع دمج خلية رقم الترخيص والمنطقة

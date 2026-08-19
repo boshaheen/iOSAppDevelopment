@@ -92,6 +92,7 @@ def main():
               <th data-key="trCount">حركات التنازل</th>
               <th data-key="boardCount">موافقة مجلس الإدارة</th>
               <th data-key="allocCount">لجنة التخصيص</th>
+              <th data-key="approvalReq">رقم طلب الموافقة</th>
             </tr>
           </thead>
           <tbody id="licBody"></tbody>
