@@ -1509,20 +1509,21 @@ const REGION_ALLOCATIONS = {"الشعيبة الصناعية": [{"year": 1998, "
 
     // ورقة 1: السجلات — صفٌّ لكل رقم عميل (قسائمه مجمّعة)، ورقم الترخيص (والحقول العامة) مدمج عمودياً
     const boardText = (l) => (l.board || []).map((b) => `${b.minutes} (${b.date}): ${b.decision}`).join(" | ");
-    const transferText = (l) => (l.transfers || []).map((t) => `${t.date ? t.date + ": " : ""}${t.from || "—"} ← ${t.to || "—"}`).join(" | ");
+    const transferFrom = (l) => (l.transfers || []).map((t) => `${t.date ? t.date + ": " : ""}${t.from || "—"}`).join(" | ");
+    const transferTo = (l) => (l.transfers || []).map((t) => `${t.to || "—"}`).join(" | ");
     const allocText = (l) => allocsOf(l).map((a) => `${a.type || ""}${a.minutes ? " (" + a.minutes + ")" : ""}: ${a.subject || a.text || ""}`).join(" | ");
     const licHead = ["رقم الترخيص", "رقم العميل", "المنطقة", "القطعة", "رقم القسيمة", "مساحة القسائم (م²)", "تاريخ التسليم",
       "الاسم", "الاسم التجاري", "النشاط", "غرض التخصيص", "الحالة",
-      "تاريخ البداية", "تاريخ النهاية", "تاريخ صدور الدائم", "حركات التنازل (المتنازِل ← المتنازَل إليه)", "قرار مجلس الإدارة", "قرار لجنة التخصيص"];
+      "تاريخ البداية", "تاريخ النهاية", "تاريخ صدور الدائم", "المتنازِل", "المتنازَل إليه", "قرار مجلس الإدارة", "قرار لجنة التخصيص"];
     const licRows = []; const licSpans = [];
     EXP.forEach((l) => {
       const start = licRows.length;
       groupByClient(l).forEach((g) => licRows.push([l.license, g.client, l.area, blocksJoin(g.plots), plotsJoin(g.plots), sizeSum(g.plots), delivJoin(g.plots),
-        l.name, l.trade, l.activity, l.purpose, l.status, l.start, l.end, (l.permanentDate || []).join(" / "), transferText(l), boardText(l), allocText(l)]));
+        l.name, l.trade, l.activity, l.purpose, l.status, l.start, l.end, (l.permanentDate || []).join(" / "), transferFrom(l), transferTo(l), boardText(l), allocText(l)]));
       if (licRows.length - start > 1) licSpans.push([start, licRows.length - 1]);
     });
-    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 22, 10, 14, 15, 15, 30, 30, 50, 14, 12, 13, 13, 13, 50, 50, 50]);
-    mergeVertical(licSheet, licSpans, [0, 2, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]);
+    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [12, 11, 22, 10, 14, 15, 15, 30, 30, 50, 14, 12, 13, 13, 13, 34, 34, 50, 50]);
+    mergeVertical(licSheet, licSpans, [0, 2, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
     XLSX.utils.book_append_sheet(wb, licSheet, "السجلات");
 
     // ورقة 2: القسائم — صفٌّ لكل رقم عميل (قسائمه مجمّعة) مع دمج خلية رقم الترخيص والمنطقة
