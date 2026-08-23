@@ -29,6 +29,9 @@
   }
   const clientPlotsOf = (l) => clientPlotCount[l.client || ("__lic_" + l.license)] ?? l.plots.length;
 
+  // أرقام طلب الموافقة لدراسة الجدوى المميّزة لقسائم الترخيص
+  const feasReqs = (l) => [...new Set((l.plots || []).map((p) => p.feasReq).filter((x) => x != null && x !== ""))];
+
   // أرقام العملاء لترخيص واحد: كل قسيمة لها رقم عميل، فنعرض الأرقام المميّزة لكل قسائم الترخيص
   const clientNums = (l) => {
     const set = [];
@@ -174,7 +177,7 @@
       k === "trCount" ? l.transfers.length :
       k === "boardCount" ? (l.board ? l.board.length : 0) :
       k === "allocCount" ? allocsOf(l).length :
-      k === "approvalReq" ? (l.approvals && l.approvals[0] ? l.approvals[0].reqNo : "") :
+      k === "approvalReq" ? (feasReqs(l)[0] || "") :
       k === "clientPlots" ? clientPlotsOf(l) :
       k === "size" ? (l.totalSize || 0) :
       k === "block" ? (l.plots[0] ? l.plots[0].block : "") :
@@ -209,7 +212,7 @@
         <td><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></td>
         <td>${esc(l.end)}</td>
         <td>${esc(l.delivery)}</td>
-        <td>${(l.approvals && l.approvals.length) ? l.approvals.map((a) => esc(a.reqNo)).join("<br>") : "—"}</td>
+        <td>${feasReqs(l).length ? feasReqs(l).map(esc).join("<br>") : "—"}</td>
         <td>${(l.permanentDate && l.permanentDate.length) ? l.permanentDate.map(esc).join("<br>") : "—"}</td>
         <td>${badge}</td>
         <td>${(l.board && l.board.length) ? `<span class="badge board">${l.board.length}</span>` : `<span class="badge zero">—</span>`}</td>
@@ -238,6 +241,7 @@
     const plots = l.plots.map((p) =>
       `<li>قطعة ${esc(p.block)} — قسيمة ${esc(p.plot)} — ${fmtNum(p.size)} م²` +
       ((p.client != null && p.client !== "") ? ` — رقم العميل: ${esc(p.client)}` : "") +
+      ((p.feasReq != null && p.feasReq !== "") ? ` — رقم طلب الموافقة: ${esc(p.feasReq)}` : "") +
       (p.delivery ? ` — تاريخ التسليم: ${esc(p.delivery)}` : "") + `</li>`).join("");
 
     const transfers = l.transfers.length
@@ -403,19 +407,20 @@
     const transferTo = (l) => (l.transfers || []).map((t) => `${t.to || "—"}`).join(" | ");
     const allocText = (l) => allocsOf(l).map((a) => `${a.type || ""}${a.minutes ? " (" + a.minutes + ")" : ""}: ${a.subject || a.text || ""}`).join(" | ");
     const approvalText = (l) => (l.approvals || []).map((a) => a.reqNo).join("، ");
+    const feasText = (ps) => [...new Set(ps.map((p) => p.feasReq).filter((x) => x != null && x !== ""))].join("، ");
     const licHead = ["رقم العميل", "الاسم", "الاسم التجاري", "رقم الترخيص", "رقم طلب الموافقة لدراسة الجدوى",
       "قرار لجنة التخصيص", "قرار مجلس الإدارة", "تاريخ محضر تسليم القسيمة", "تاريخ صدور الدائم",
       "تاريخ بداية سريان العقد", "تاريخ نهاية العقد", "القطعة", "رقم القسيمة", "المتنازِل", "المتنازَل إليه"];
     const licRows = []; const licSpans = [];
     EXP.forEach((l) => {
       const start = licRows.length;
-      groupByClient(l).forEach((g) => licRows.push([g.client, l.name, l.trade, l.license, approvalText(l),
+      groupByClient(l).forEach((g) => licRows.push([g.client, l.name, l.trade, l.license, feasText(g.plots),
         allocText(l), boardText(l), delivJoin(g.plots), (l.permanentDate || []).join(" / "),
         l.start, l.end, blocksJoin(g.plots), plotsJoin(g.plots), transferFrom(l), transferTo(l)]));
       if (licRows.length - start > 1) licSpans.push([start, licRows.length - 1]);
     });
     const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [11, 32, 32, 12, 20, 50, 50, 16, 14, 15, 14, 10, 14, 34, 34]);
-    mergeVertical(licSheet, licSpans, [1, 2, 3, 4, 5, 6, 8, 9, 10, 13, 14]);
+    mergeVertical(licSheet, licSpans, [1, 2, 3, 5, 6, 8, 9, 10, 13, 14]);
     XLSX.utils.book_append_sheet(wb, licSheet, "السجلات");
 
     // ورقة 2: القسائم — صفٌّ لكل رقم عميل (قسائمه مجمّعة) مع دمج خلية رقم الترخيص والمنطقة
