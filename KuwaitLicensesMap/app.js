@@ -410,17 +410,17 @@
     const feasText = (ps) => [...new Set(ps.map((p) => p.feasReq).filter((x) => x != null && x !== ""))].join("، ");
     const licHead = ["رقم العميل", "الاسم", "الاسم التجاري", "رقم الترخيص", "رقم طلب الموافقة لدراسة الجدوى",
       "قرار لجنة التخصيص", "قرار مجلس الإدارة", "تاريخ محضر تسليم القسيمة", "تاريخ صدور الدائم",
-      "تاريخ بداية سريان العقد", "تاريخ نهاية العقد", "القطعة", "رقم القسيمة", "المتنازِل", "المتنازَل إليه"];
+      "تاريخ بداية سريان العقد", "تاريخ نهاية العقد", "المنطقة", "القطعة", "رقم القسيمة", "المتنازِل", "المتنازَل إليه"];
     const licRows = []; const licSpans = [];
     EXP.forEach((l) => {
       const start = licRows.length;
       groupByClient(l).forEach((g) => licRows.push([g.client, l.name, l.trade, l.license, feasText(g.plots),
         allocText(l), boardText(l), delivJoin(g.plots), (l.permanentDate || []).join(" / "),
-        l.start, l.end, blocksJoin(g.plots), plotsJoin(g.plots), transferFrom(l), transferTo(l)]));
+        l.start, l.end, l.area, blocksJoin(g.plots), plotsJoin(g.plots), transferFrom(l), transferTo(l)]));
       if (licRows.length - start > 1) licSpans.push([start, licRows.length - 1]);
     });
-    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [11, 32, 32, 12, 20, 50, 50, 16, 14, 15, 14, 10, 14, 34, 34]);
-    mergeVertical(licSheet, licSpans, [1, 2, 3, 5, 6, 8, 9, 10, 13, 14]);
+    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [11, 32, 32, 12, 20, 50, 50, 16, 14, 15, 14, 22, 10, 14, 34, 34]);
+    mergeVertical(licSheet, licSpans, [1, 2, 3, 5, 6, 8, 9, 10, 11, 14, 15]);
     XLSX.utils.book_append_sheet(wb, licSheet, "السجلات");
 
     // ورقة 2: القسائم — صفٌّ لكل رقم عميل (قسائمه مجمّعة) مع دمج خلية رقم الترخيص والمنطقة
