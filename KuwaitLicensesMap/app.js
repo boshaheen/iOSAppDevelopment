@@ -32,6 +32,10 @@
   // أرقام طلب الموافقة لدراسة الجدوى المميّزة لقسائم الترخيص
   const feasReqs = (l) => [...new Set((l.plots || []).map((p) => p.feasReq).filter((x) => x != null && x !== ""))];
 
+  // أرقام التراخيص للسجل الواحد (الأساسي + أي أرقام إضافية لنفس الشركة)
+  const licenseNums = (l) =>
+    [l.license, ...(l.licenseAlt || [])].filter((x) => x != null && x !== "");
+
   // أرقام العملاء لترخيص واحد: كل قسيمة لها رقم عميل، فنعرض الأرقام المميّزة لكل قسائم الترخيص
   const clientNums = (l) => {
     const set = [];
@@ -162,7 +166,7 @@
     if (!state.search) return true;
     const q = state.search.toLowerCase();
     const hay = [
-      l.license, ...clientNums(l), l.name, l.trade, l.area, l.activity, l.status, l.delivery, ...(l.permanentDate || []),
+      ...licenseNums(l), ...clientNums(l), l.name, l.trade, l.area, l.activity, l.status, l.delivery, ...(l.permanentDate || []),
       ...l.plots.flatMap((p) => [p.block, p.plot]),
       ...l.transfers.flatMap((t) => [t.from, t.to, t.reqNo, t.date]),
       ...(l.board || []).flatMap((bd) => [bd.decision, bd.subject, bd.minutes, bd.occupant]),
@@ -200,7 +204,7 @@
       const badge = tc ? `<span class="badge">${tc}</span>` : `<span class="badge zero">0</span>`;
       return `
       <tr class="main-row" data-i="${i}">
-        <td>${esc(l.license)}</td>
+        <td>${licenseNums(l).length ? licenseNums(l).map(esc).join("<br>") : "—"}</td>
         <td>${clientNums(l).length ? clientNums(l).map(esc).join("<br>") : "—"}</td>
         <td>${clientPlotsOf(l)}</td>
         <td>${esc(l.area)}</td>
@@ -408,19 +412,19 @@
     const allocText = (l) => allocsOf(l).map((a) => `${a.type || ""}${a.minutes ? " (" + a.minutes + ")" : ""}: ${a.subject || a.text || ""}`).join(" | ");
     const approvalText = (l) => (l.approvals || []).map((a) => a.reqNo).join("، ");
     const feasText = (ps) => [...new Set(ps.map((p) => p.feasReq).filter((x) => x != null && x !== ""))].join("، ");
-    const licHead = ["رقم العميل", "الاسم", "الاسم التجاري", "رقم الترخيص", "رقم طلب الموافقة لدراسة الجدوى",
+    const licHead = ["رقم العميل", "الاسم", "الاسم التجاري", "النشاط", "رقم الترخيص", "رقم طلب الموافقة لدراسة الجدوى",
       "قرار لجنة التخصيص", "قرار مجلس الإدارة", "تاريخ محضر تسليم القسيمة", "تاريخ صدور الدائم",
-      "تاريخ بداية سريان العقد", "تاريخ نهاية العقد", "المنطقة", "القطعة", "رقم القسيمة", "المتنازِل", "المتنازَل إليه"];
+      "تاريخ بداية سريان العقد", "تاريخ نهاية العقد", "المنطقة", "القطعة", "رقم القسيمة", "المتنازِل", "المتنازَل إليه", "ما تكشف للجنة مخالفات"];
     const licRows = []; const licSpans = [];
     EXP.forEach((l) => {
       const start = licRows.length;
-      groupByClient(l).forEach((g) => licRows.push([g.client, l.name, l.trade, l.license, feasText(g.plots),
+      groupByClient(l).forEach((g) => licRows.push([g.client, l.name, l.trade, l.activity, licenseNums(l).join("، "), feasText(g.plots),
         allocText(l), boardText(l), delivJoin(g.plots), (l.permanentDate || []).join(" / "),
-        l.start, l.end, l.area, blocksJoin(g.plots), plotsJoin(g.plots), transferFrom(l), transferTo(l)]));
+        l.start, l.end, l.area, blocksJoin(g.plots), plotsJoin(g.plots), transferFrom(l), transferTo(l), (l.violations || "")]));
       if (licRows.length - start > 1) licSpans.push([start, licRows.length - 1]);
     });
-    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [11, 32, 32, 12, 20, 50, 50, 16, 14, 15, 14, 22, 10, 14, 34, 34]);
-    mergeVertical(licSheet, licSpans, [1, 2, 3, 5, 6, 8, 9, 10, 11, 14, 15]);
+    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [11, 32, 32, 50, 14, 20, 50, 50, 16, 14, 15, 14, 22, 10, 14, 34, 34, 30]);
+    mergeVertical(licSheet, licSpans, [1, 2, 3, 4, 6, 7, 9, 10, 11, 12, 15, 16, 17]);
     XLSX.utils.book_append_sheet(wb, licSheet, "السجلات");
 
     // ورقة 2: القسائم — صفٌّ لكل رقم عميل (قسائمه مجمّعة) مع دمج خلية رقم الترخيص والمنطقة
