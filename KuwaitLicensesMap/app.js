@@ -623,19 +623,14 @@
 
   // ---------- صفحة اختيار المناطق ----------
   const REGIONS = [
-    { name: "الشعيبة الصناعية", lat: 29.02, lng: 48.13, active: true },
-    { name: "صبحان الصناعية", lat: 29.2309026, lng: 48.0035053, active: true },
-    { name: "أمغرة الصناعية", lat: 29.352, lng: 47.782, active: true },
-    { name: "الشويخ الصناعية", lat: 29.338, lng: 47.93 },
-    { name: "الري", lat: 29.302, lng: 47.925 },
-    { name: "جنوب أمغرة", lat: 29.322, lng: 47.802 },
+    { name: "الشعيبة الصناعية", label: "منطقة الشعيبة (الشرقية والغربية)", lat: 29.02, lng: 48.13, active: true },
+    { name: "أمغرة الصناعية", lat: 29.352, lng: 47.782 },
+    { name: "صبحان الصناعية", lat: 29.2309026, lng: 48.0035053 },
     { name: "الصليبية الصناعية", lat: 29.262, lng: 47.86 },
-    { name: "المرقاب الصناعية", lat: 29.366, lng: 47.984 },
-    { name: "النعايم", lat: 29.285, lng: 47.229 },
-    { name: "الفحيحيل", lat: 29.082, lng: 48.13 },
-    { name: "شرق الأحمدي", lat: 29.06, lng: 48.11 },
     { name: "ميناء عبدالله الصناعية", lat: 29.02, lng: 48.16 },
+    { name: "الشويخ ، الري ، الجهراء ، الأحمدي ، وأخرى" },
   ];
+  const rlabel = (r) => r.label || r.name;
   let regMap;
   function enterApp(name) {
     if (name) loadRegion(name);
@@ -656,17 +651,18 @@
         L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Imagery © Esri" }).addTo(regMap);
         L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, opacity: 0.9 }).addTo(regMap);
         REGIONS.forEach((r) => {
+          if (r.lat == null || r.lng == null) return;
           const m = L.circleMarker([r.lat, r.lng], {
             radius: r.active ? 14 : 9, color: "#fff", weight: 2.5,
             fillColor: r.active ? "#2bb673" : "#8595a8", fillOpacity: r.active ? 0.92 : 0.6,
           }).addTo(regMap);
-          m.bindTooltip(r.name + (r.active ? "" : " — قريباً"), { direction: "top" });
+          m.bindTooltip(rlabel(r) + (r.active ? "" : " — قريباً"), { direction: "top" });
           if (r.active) {
-            m.bindPopup(`<div class="map-popup"><b>${esc(r.name)}</b><br/>متاح الآن<br/><button data-enter="1">افتح التقرير ↦</button></div>`);
+            m.bindPopup(`<div class="map-popup"><b>${esc(rlabel(r))}</b><br/>متاح الآن<br/><button data-enter="1">افتح التقرير ↦</button></div>`);
             m.on("popupopen", (e) => { const b = e.popup.getElement().querySelector("button[data-enter]"); if (b) b.addEventListener("click", () => enterApp(r.name)); });
             m.on("click", () => enterApp(r.name));
           } else {
-            m.bindPopup(`<div class="map-popup"><b>${esc(r.name)}</b><br/>قريباً</div>`);
+            m.bindPopup(`<div class="map-popup"><b>${esc(rlabel(r))}</b><br/>قريباً</div>`);
           }
         });
       } catch (e) { console.error("regions map failed", e); }
@@ -675,7 +671,7 @@
     if (cards) {
       cards.innerHTML = REGIONS.map((r) =>
         `<div class="region-card ${r.active ? "active" : "soon"}" data-name="${esc(r.name)}">
-           <div class="rc-name">${esc(r.name)}</div>
+           <div class="rc-name">${esc(rlabel(r))}</div>
            <div class="rc-status">${r.active ? "متاح الآن ✓" : "قريباً"}</div>
          </div>`).join("");
       cards.querySelectorAll(".region-card.active").forEach((c) => c.addEventListener("click", () => enterApp(c.dataset.name)));
