@@ -246,7 +246,9 @@
       `<li>قطعة ${esc(p.block)} — قسيمة ${esc(p.plot)} — ${fmtNum(p.size)} م²` +
       ((p.client != null && p.client !== "") ? ` — رقم العميل: ${esc(p.client)}` : "") +
       ((p.feasReq != null && p.feasReq !== "") ? ` — رقم طلب الموافقة: ${esc(p.feasReq)}` : "") +
-      (p.delivery ? ` — تاريخ التسليم: ${esc(p.delivery)}` : "") + `</li>`).join("");
+      (p.delivery ? ` — تاريخ التسليم: ${esc(p.delivery)}` : "") +
+      (p.allocDecision ? ` — قرار جهة التخصيص: ${esc(p.allocDecision)}` : "") +
+      (p.note ? ` — ملاحظات: ${esc(p.note)}` : "") + `</li>`).join("");
 
     const transfers = l.transfers.length
       ? `<table class="hist-table">
@@ -412,19 +414,20 @@
     const allocText = (l) => allocsOf(l).map((a) => `${a.type || ""}${a.minutes ? " (" + a.minutes + ")" : ""}: ${a.subject || a.text || ""}`).join(" | ");
     const approvalText = (l) => (l.approvals || []).map((a) => a.reqNo).join("، ");
     const feasText = (ps) => [...new Set(ps.map((p) => p.feasReq).filter((x) => x != null && x !== ""))].join("، ");
+    const uniqJoin = (ps, key) => [...new Set(ps.map((p) => p[key]).filter((x) => x != null && x !== ""))].join(" | ");
     const licHead = ["رقم العميل", "الاسم", "الاسم التجاري", "النشاط", "رقم الترخيص", "رقم طلب الموافقة لدراسة الجدوى",
-      "قرار لجنة التخصيص", "قرار مجلس الإدارة", "تاريخ محضر تسليم القسيمة", "تاريخ صدور الدائم",
-      "تاريخ بداية سريان العقد", "تاريخ نهاية العقد", "المنطقة", "القطعة", "رقم القسيمة", "المتنازِل", "المتنازَل إليه", "ما تكشف للجنة مخالفات"];
+      "قرار جهة التخصيص", "تاريخ محضر تسليم القسيمة", "تاريخ صدور الدائم",
+      "تاريخ بداية سريان العقد", "تاريخ نهاية العقد", "المنطقة", "القطعة", "رقم القسيمة", "المتنازِل", "المتنازَل إليه", "ملاحظات"];
     const licRows = []; const licSpans = [];
     EXP.forEach((l) => {
       const start = licRows.length;
       groupByClient(l).forEach((g) => licRows.push([g.client, l.name, l.trade, l.activity, licenseNums(l).join("، "), feasText(g.plots),
-        allocText(l), boardText(l), delivJoin(g.plots), (l.permanentDate || []).join(" / "),
-        l.start, l.end, l.area, blocksJoin(g.plots), plotsJoin(g.plots), transferFrom(l), transferTo(l), (l.violations || "")]));
+        uniqJoin(g.plots, "allocDecision"), delivJoin(g.plots), (l.permanentDate || []).join(" / "),
+        l.start, l.end, l.area, blocksJoin(g.plots), plotsJoin(g.plots), transferFrom(l), transferTo(l), uniqJoin(g.plots, "note")]));
       if (licRows.length - start > 1) licSpans.push([start, licRows.length - 1]);
     });
-    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [11, 32, 32, 50, 14, 20, 50, 50, 16, 14, 15, 14, 22, 10, 14, 34, 34, 30]);
-    mergeVertical(licSheet, licSpans, [1, 2, 3, 4, 6, 7, 9, 10, 11, 12, 15, 16, 17]);
+    const licSheet = rtl(XLSX.utils.aoa_to_sheet([licHead, ...licRows]), [11, 32, 32, 50, 14, 20, 40, 16, 14, 15, 14, 22, 10, 14, 34, 34, 30]);
+    mergeVertical(licSheet, licSpans, [1, 2, 3, 4, 8, 9, 10, 11, 14, 15]);
     XLSX.utils.book_append_sheet(wb, licSheet, "السجلات");
 
     // ورقة 2: القسائم — صفٌّ لكل رقم عميل (قسائمه مجمّعة) مع دمج خلية رقم الترخيص والمنطقة
