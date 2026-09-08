@@ -91,8 +91,7 @@ def main():
               <th data-key="approvalReq">رقم طلب الموافقة لدراسة الجدوى</th>
               <th data-key="permanentDate">تاريخ صدور الدائم</th>
               <th data-key="trCount">حركات التنازل</th>
-              <th data-key="boardCount">موافقة مجلس الإدارة</th>
-              <th data-key="allocCount">لجنة التخصيص</th>
+              <th data-key="allocDecision">قرار جهة التخصيص</th>
             </tr>
           </thead>
           <tbody id="licBody"></tbody>

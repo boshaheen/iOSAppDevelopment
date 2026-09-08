@@ -36,6 +36,9 @@
   const licenseNums = (l) =>
     [l.license, ...(l.licenseAlt || [])].filter((x) => x != null && x !== "");
 
+  // قرارات جهة التخصيص المميّزة لقسائم الترخيص
+  const allocDecs = (l) => [...new Set((l.plots || []).map((p) => p.allocDecision).filter((x) => x != null && x !== ""))];
+
   // أرقام العملاء لترخيص واحد: كل قسيمة لها رقم عميل، فنعرض الأرقام المميّزة لكل قسائم الترخيص
   const clientNums = (l) => {
     const set = [];
@@ -182,6 +185,7 @@
       k === "boardCount" ? (l.board ? l.board.length : 0) :
       k === "allocCount" ? allocsOf(l).length :
       k === "approvalReq" ? (feasReqs(l)[0] || "") :
+      k === "allocDecision" ? (allocDecs(l)[0] || "") :
       k === "clientPlots" ? clientPlotsOf(l) :
       k === "size" ? (l.totalSize || 0) :
       k === "block" ? (l.plots[0] ? l.plots[0].block : "") :
@@ -219,8 +223,7 @@
         <td>${feasReqs(l).length ? feasReqs(l).map(esc).join("<br>") : "—"}</td>
         <td>${(l.permanentDate && l.permanentDate.length) ? l.permanentDate.map(esc).join("<br>") : "—"}</td>
         <td>${badge}</td>
-        <td>${(l.board && l.board.length) ? `<span class="badge board">${l.board.length}</span>` : `<span class="badge zero">—</span>`}</td>
-        <td>${allocsOf(l).length ? `<span class="badge alloc">${allocsOf(l).length}</span>` : `<span class="badge zero">—</span>`}</td>
+        <td class="name-cell">${allocDecs(l).length ? allocDecs(l).map(esc).join("<br>") : "—"}</td>
       </tr>`;
     }).join("");
 
@@ -285,7 +288,7 @@
 
     const row = document.createElement("tr");
     row.className = "detail-row";
-    row.innerHTML = `<td colspan="17"><div class="detail-inner">
+    row.innerHTML = `<td colspan="16"><div class="detail-inner">
         <div class="detail-grid">
           <div><div class="k">الاسم الحالي للترخيص</div><div class="v">${esc(l.name)}</div></div>
           <div><div class="k">الاسم التجاري</div><div class="v">${esc(l.trade)}</div></div>
