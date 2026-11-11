@@ -281,3 +281,6 @@ tbody tr.main-row.active { background: #223347; }
   .detail-inner h4 { color: #000 !important; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* إخفاء عمود حالة الترخيص للمناطق بلا حالة (أمغرة) */
+#licTable.no-status .col-status { display: none; }

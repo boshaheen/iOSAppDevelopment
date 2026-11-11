@@ -85,7 +85,7 @@ def main():
               <th data-key="size">المساحة (م²)</th>
               <th data-key="name">الاسم الحالي للترخيص</th>
               <th data-key="trade">الاسم التجاري</th>
-              <th data-key="status">حالة الترخيص</th>
+              <th data-key="status" class="col-status">حالة الترخيص</th>
               <th data-key="end">تاريخ النهاية</th>
               <th data-key="delivery">تاريخ التسليم</th>
               <th data-key="approvalReq">رقم طلب الموافقة لدراسة الجدوى</th>

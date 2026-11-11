@@ -951,6 +951,9 @@ tbody tr.main-row.active { background: #223347; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
+/* إخفاء عمود حالة الترخيص للمناطق بلا حالة (أمغرة) */
+#licTable.no-status .col-status { display: none; }
+
   </style>
 </head>
 <body>
@@ -1008,7 +1011,7 @@ tbody tr.main-row.active { background: #223347; }
               <th data-key="size">المساحة (م²)</th>
               <th data-key="name">الاسم الحالي للترخيص</th>
               <th data-key="trade">الاسم التجاري</th>
-              <th data-key="status">حالة الترخيص</th>
+              <th data-key="status" class="col-status">حالة الترخيص</th>
               <th data-key="end">تاريخ النهاية</th>
               <th data-key="delivery">تاريخ التسليم</th>
               <th data-key="approvalReq">رقم طلب الموافقة لدراسة الجدوى</th>
@@ -1315,7 +1318,7 @@ const REGION_ALLOCATIONS = {"الشعيبة الصناعية": [{"year": 1998, "
         <td>${fmtNum(l.totalSize)}</td>
         <td class="name-cell">${esc(l.name)}</td>
         <td class="name-cell">${esc(l.trade)}</td>
-        <td><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></td>
+        <td class="col-status"><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></td>
         <td>${esc(l.end)}</td>
         <td>${esc(l.delivery)}</td>
         <td>${feasReqs(l).length ? feasReqs(l).map(esc).join("<br>") : "—"}</td>
@@ -1331,6 +1334,10 @@ const REGION_ALLOCATIONS = {"الشعيبة الصناعية": [{"year": 1998, "
     document.getElementById("resultCount").textContent =
       `عدد النتائج: ${rows.length.toLocaleString("en-US")}`;
     document.getElementById("emptyState").hidden = rows.length !== 0;
+
+    // إخفاء عمود حالة الترخيص إن لم تكن هناك أي حالة في المنطقة الحالية (مثل أمغرة)
+    const tbl = document.getElementById("licTable");
+    if (tbl) tbl.classList.toggle("no-status", !LICENSES.some((l) => l.status));
 
     Object.entries(markers).forEach(([name, m]) =>
       m.setStyle({ fillColor: state.area && name === state.area ? "#3a9ad9" : "#2bb673" }));

@@ -217,7 +217,7 @@
         <td>${fmtNum(l.totalSize)}</td>
         <td class="name-cell">${esc(l.name)}</td>
         <td class="name-cell">${esc(l.trade)}</td>
-        <td><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></td>
+        <td class="col-status"><span class="status ${esc(l.status || "")}">${esc(l.status || "—")}</span></td>
         <td>${esc(l.end)}</td>
         <td>${esc(l.delivery)}</td>
         <td>${feasReqs(l).length ? feasReqs(l).map(esc).join("<br>") : "—"}</td>
@@ -233,6 +233,10 @@
     document.getElementById("resultCount").textContent =
       `عدد النتائج: ${rows.length.toLocaleString("en-US")}`;
     document.getElementById("emptyState").hidden = rows.length !== 0;
+
+    // إخفاء عمود حالة الترخيص إن لم تكن هناك أي حالة في المنطقة الحالية (مثل أمغرة)
+    const tbl = document.getElementById("licTable");
+    if (tbl) tbl.classList.toggle("no-status", !LICENSES.some((l) => l.status));
 
     Object.entries(markers).forEach(([name, m]) =>
       m.setStyle({ fillColor: state.area && name === state.area ? "#3a9ad9" : "#2bb673" }));
