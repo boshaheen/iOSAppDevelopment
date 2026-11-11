@@ -92,12 +92,26 @@
     const totalSize = LICENSES.reduce((s, l) => s + (l.totalSize || 0), 0);
     const active = LICENSES.filter((l) => l.status === "قائم").length;
     const mortgaged = LICENSES.filter((l) => l.status && l.status.includes("مرهون")).length;
-    const cards = [
-      { num: LICENSES.length.toLocaleString("en-US"), lbl: "إجمالي التراخيص" },
-      { num: active.toLocaleString("en-US"), lbl: "قائمة" },
-      { num: mortgaged.toLocaleString("en-US"), lbl: "مرهونة" },
-      { num: fmtNum(Math.round(totalSize)), lbl: "إجمالي المساحة (م²)" },
-    ];
+    const region = (typeof REGION_DATA !== "undefined") ? REGION_DATA[currentRegionName] : null;
+    const ps = region && region.plotStats;
+    let cards;
+    if (ps) {
+      // للمناطق ذات الإحصاء الرسمي للقسائم (بدل قائمة/مرهونة)
+      cards = [
+        { num: LICENSES.length.toLocaleString("en-US"), lbl: "إجمالي التراخيص" },
+        { num: Number(ps.industrial).toLocaleString("en-US"), lbl: "عدد القسائم الصناعية" },
+        { num: Number(ps.occupied).toLocaleString("en-US"), lbl: "القسائم المستغلة" },
+        { num: Number(ps.vacant).toLocaleString("en-US"), lbl: "القسائم الشاغرة" },
+        { num: fmtNum(Math.round(totalSize)), lbl: "إجمالي المساحة (م²)" },
+      ];
+    } else {
+      cards = [
+        { num: LICENSES.length.toLocaleString("en-US"), lbl: "إجمالي التراخيص" },
+        { num: active.toLocaleString("en-US"), lbl: "قائمة" },
+        { num: mortgaged.toLocaleString("en-US"), lbl: "مرهونة" },
+        { num: fmtNum(Math.round(totalSize)), lbl: "إجمالي المساحة (م²)" },
+      ];
+    }
     document.getElementById("stats").innerHTML = cards
       .map((c) => `<div class="stat-card"><div class="num">${c.num}</div><div class="lbl">${c.lbl}</div></div>`)
       .join("");
