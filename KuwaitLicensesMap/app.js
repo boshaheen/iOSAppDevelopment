@@ -345,8 +345,7 @@
     const statusSel = document.getElementById("statusFilter");
     if (statusSel) {
       statusSel.innerHTML = `<option value="">كل الحالات</option>` +
-        [...new Set(LICENSES.map((l) => l.status).filter(Boolean))].map((st) => `<option value="${esc(st)}">${esc(st)}</option>`).join("") +
-        `<option value="__transfer__">— تنازلات —</option>`;
+        [...new Set(LICENSES.map((l) => l.status).filter(Boolean))].map((st) => `<option value="${esc(st)}">${esc(st)}</option>`).join("");
     }
   }
 
